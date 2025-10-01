@@ -1,0 +1,12 @@
+packages:
+  - apps/*
+  - packages/*
+
+ignoredBuiltDependencies:
+  - '@apollo/protobufjs'
+  - '@nestjs/core'
+  - bcrypt
+  - cpu-features
+  - msgpackr-extract
+  - protobufjs
+  - ssh2

@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: boomscore-db
+    environment:
+      POSTGRES_DB: boomscore
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./apps/backend/src/database/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - boomscore
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: boomscore-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - boomscore
+
+  # Backend API
+  api:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+      target: development
+    container_name: boomscore-api
+    environment:
+      NODE_ENV: development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: password
+      DATABASE_NAME: boomscore
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production-must-be-at-least-32-characters-long
+      JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-in-production-must-be-at-least-32-characters-long
+      SPORT_API_KEY: ${SPORT_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY}
+      PAYSTACK_PUBLIC_KEY: ${PAYSTACK_PUBLIC_KEY}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./apps/backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: pnpm dev
+    networks:
+      - boomscore
+
+  # Worker (for background jobs)
+  worker:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+      target: development
+    container_name: boomscore-worker
+    environment:
+      NODE_ENV: development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: password
+      DATABASE_NAME: boomscore
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production-must-be-at-least-32-characters-long
+      JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-in-production-must-be-at-least-32-characters-long
+      SPORT_API_KEY: ${SPORT_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY}
+      PAYSTACK_PUBLIC_KEY: ${PAYSTACK_PUBLIC_KEY}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+    volumes:
+      - ./apps/backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: pnpm start:worker
+    networks:
+      - boomscore
+
+  # Frontend (placeholder for future Next.js app)
+  frontend:
+    image: node:18-alpine
+    container_name: boomscore-frontend
+    working_dir: /app
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+    ports:
+      - '3000:3000'
+    command: sh -c "echo 'Frontend placeholder - Next.js app will go here' && sleep infinity"
+    networks:
+      - boomscore
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  boomscore:
+    driver: bridge

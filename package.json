@@ -1,0 +1,47 @@
+{
+  "name": "boomscore",
+  "version": "1.0.0",
+  "description": "BoomScore AI - Enterprise sports prediction platform with AI-driven insights",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter backend dev",
+    "build": "pnpm -r build",
+    "start": "docker-compose up -d && pnpm --filter backend dev",
+    "start:prod": "pnpm --filter backend start:prod",
+    "test": "pnpm -r test",
+    "test:cov": "pnpm -r test:cov",
+    "test:e2e": "pnpm -r test:e2e",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "migration:generate": "pnpm --filter backend migration:generate",
+    "migration:run": "pnpm --filter backend migration:run",
+    "migration:revert": "pnpm --filter backend migration:revert",
+    "seed:run": "pnpm --filter backend seed:run",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:build": "docker-compose build",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "husky": "^9.0.11",
+    "prettier": "^3.3.2",
+    "typescript": "^5.4.5"
+  },
+  "packageManager": "pnpm@10.9.0+sha512.0486e394640d3c1fb3c9d43d49cf92879ff74f8516959c235308f5a8f62e2e19528a65cdc2a3058f587cde71eba3d5b56327c8c33a97e4c4051ca48a10ca2d5f",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "6.0.0"
+  }
+}
