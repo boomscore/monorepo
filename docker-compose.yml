@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Database
   postgres:
@@ -46,6 +44,8 @@ services:
       dockerfile: apps/backend/Dockerfile
       target: development
     container_name: boomscore-api
+    env_file:
+      - .env
     environment:
       NODE_ENV: development
       DATABASE_HOST: postgres
@@ -83,6 +83,8 @@ services:
       dockerfile: apps/backend/Dockerfile
       target: development
     container_name: boomscore-worker
+    env_file:
+      - .env
     environment:
       NODE_ENV: development
       DATABASE_HOST: postgres

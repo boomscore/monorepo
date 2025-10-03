@@ -1,9 +1,3 @@
-/*
- * Sports Prediction Platform
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';

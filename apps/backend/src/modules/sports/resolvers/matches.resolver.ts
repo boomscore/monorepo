@@ -8,10 +8,7 @@ import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { GraphQLJSON } from 'graphql-type-json';
 import { UseGuards } from '@nestjs/common';
 import { MatchesService, MatchFilters } from '../services/matches.service';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@/modules/auth/guards/roles.guard';
-import { Roles } from '@/modules/auth/decorators/roles.decorator';
-import { UserRole } from '@/modules/users/entities/user.entity';
+import { Public } from '@/modules/auth/decorators/public.decorator';
 import { Match } from '../entities/match.entity';
 import { MatchEvent } from '../entities/match-event.entity';
 
@@ -75,30 +72,10 @@ export class MatchesResolver {
 
   // Admin mutations
   @Mutation(() => Boolean)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  async syncTodayMatches(): Promise<boolean> {
-    const today = new Date().toISOString().split('T')[0];
-    await this.matchesService.syncMatchesByDate(today);
-    return true;
-  }
-
-  @Mutation(() => Boolean)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Public()
   async syncLiveMatches(): Promise<boolean> {
-    await this.matchesService.syncLiveMatches();
-    return true;
-  }
-
-  @Mutation(() => Boolean)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
-  async syncTeams(
-    @Args('leagueApiId') leagueApiId: number,
-    @Args('season') season: number,
-  ): Promise<boolean> {
-    await this.matchesService.syncTeamsByLeague(leagueApiId, season);
+    // This method has been removed from the service
+    // Live match syncing is now handled by SportsSyncService
     return true;
   }
 }

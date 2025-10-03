@@ -51,6 +51,9 @@ export class DatabaseConfigService implements TypeOrmOptionsFactory {
   constructor(private configService: ConfigService) {}
 
   createTypeOrmOptions(): TypeOrmModuleOptions {
+    const nodeEnv = this.configService.get<string>('NODE_ENV');
+    const shouldSync = nodeEnv === 'development';
+
     return {
       type: 'postgres',
       host: this.configService.get<string>('DATABASE_HOST'),
@@ -60,10 +63,10 @@ export class DatabaseConfigService implements TypeOrmOptionsFactory {
       database: this.configService.get<string>('DATABASE_NAME'),
       ssl: this.configService.get<boolean>('DATABASE_SSL') ? { rejectUnauthorized: false } : false,
       entities,
-      synchronize: this.configService.get<string>('NODE_ENV') === 'development', // Enable sync in development
+      synchronize: false, // Synchronization is broken - use migrations instead
       logging: this.configService.get<boolean>('DATABASE_LOGGING'),
       migrations: ['dist/database/migrations/*.js'],
-      migrationsRun: false, // Run migrations manually
+      migrationsRun: false, // Don't auto-run to avoid race conditions
       autoLoadEntities: true,
       retryAttempts: 3,
       retryDelay: 3000,
@@ -72,6 +75,9 @@ export class DatabaseConfigService implements TypeOrmOptionsFactory {
         max: 20, // Maximum pool size
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 2000,
+        // Abort long-running statements/queries to avoid hangs
+        statement_timeout: 5000, // ms
+        query_timeout: 5000, // ms (node-postgres driver)
       },
     };
   }

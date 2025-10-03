@@ -45,8 +45,8 @@ export class Sport {
   @Field({ nullable: true })
   image?: string;
 
-  @Column({ type: 'int', unique: true })
-  apiId: number;
+  @Column({ length: 50, unique: true })
+  apiId: string;
 
   @Column({ type: 'boolean', default: true })
   @Field()

@@ -6,7 +6,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { Match, MatchStatus } from '../entities/match.entity';
 import { MatchEvent } from '../entities/match-event.entity';
 import { SportsApiService } from './sports-api.service';
@@ -113,6 +113,111 @@ export class MatchesService {
       isLive: true,
       leagueId: options.leagueId,
       limit: options.limit || 20,
+    });
+  }
+
+  async getTodayMatches(): Promise<Match[]> {
+    return this.findMatches({
+      isToday: true,
+      limit: 50,
+      sortBy: 'startTime',
+      sortOrder: 'ASC',
+    });
+  }
+
+  async getUpcomingMatches(days: number = 7): Promise<Match[]> {
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + days);
+
+    const queryBuilder = this.matchRepository
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.league', 'league')
+      .leftJoinAndSelect('match.homeTeam', 'homeTeam')
+      .leftJoinAndSelect('match.awayTeam', 'awayTeam')
+      .where('match.startTime > :now', { now: new Date() })
+      .andWhere('match.startTime <= :endDate', { endDate })
+      .andWhere('match.status = :status', { status: MatchStatus.SCHEDULED })
+      .orderBy('match.startTime', 'ASC')
+      .limit(50);
+
+    return queryBuilder.getMany();
+  }
+
+  async getRecentMatches(days: number = 3): Promise<Match[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const queryBuilder = this.matchRepository
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.league', 'league')
+      .leftJoinAndSelect('match.homeTeam', 'homeTeam')
+      .leftJoinAndSelect('match.awayTeam', 'awayTeam')
+      .where('match.startTime >= :startDate', { startDate })
+      .andWhere('match.startTime < :now', { now: new Date() })
+      .andWhere('match.status = :status', { status: MatchStatus.FINISHED })
+      .orderBy('match.startTime', 'DESC')
+      .limit(30);
+
+    return queryBuilder.getMany();
+  }
+
+  async getMatchesByDate(date: string): Promise<Match[]> {
+    return this.findMatches({
+      date,
+      limit: 100,
+      sortBy: 'startTime',
+      sortOrder: 'ASC',
+    });
+  }
+
+  async getMatchesByLeague(leagueId: string, days: number = 7): Promise<Match[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + days);
+
+    const queryBuilder = this.matchRepository
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.league', 'league')
+      .leftJoinAndSelect('match.homeTeam', 'homeTeam')
+      .leftJoinAndSelect('match.awayTeam', 'awayTeam')
+      .where('match.leagueId = :leagueId', { leagueId })
+      .andWhere('match.startTime >= :startDate', { startDate })
+      .andWhere('match.startTime <= :endDate', { endDate })
+      .orderBy('match.startTime', 'ASC')
+      .limit(50);
+
+    return queryBuilder.getMany();
+  }
+
+  async getMatchesByTeam(teamId: string, limit: number = 10): Promise<Match[]> {
+    const queryBuilder = this.matchRepository
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.league', 'league')
+      .leftJoinAndSelect('match.homeTeam', 'homeTeam')
+      .leftJoinAndSelect('match.awayTeam', 'awayTeam')
+      .where('match.homeTeamId = :teamId OR match.awayTeamId = :teamId', { teamId })
+      .orderBy('match.startTime', 'DESC')
+      .limit(limit);
+
+    return queryBuilder.getMany();
+  }
+
+  async getLiveMatchCount(): Promise<number> {
+    return this.matchRepository.count({
+      where: [{ status: MatchStatus.LIVE }, { status: MatchStatus.HALFTIME }],
+    });
+  }
+
+  async getTodayMatchCount(): Promise<number> {
+    const today = new Date().toISOString().split('T')[0];
+    const startOfDay = new Date(today + 'T00:00:00.000Z');
+    const endOfDay = new Date(today + 'T23:59:59.999Z');
+
+    return this.matchRepository.count({
+      where: {
+        startTime: Between(startOfDay, endOfDay),
+      },
     });
   }
 
@@ -228,29 +333,5 @@ export class MatchesService {
 
     // TODO: Implement match events fetching
     return [];
-  }
-
-  async syncMatchesByDate(date: string): Promise<void> {
-    // TODO: Implement sync by date
-    this.logger.info('Syncing matches by date', {
-      service: 'matches',
-      date,
-    });
-  }
-
-  async syncLiveMatches(): Promise<void> {
-    // TODO: Implement live matches sync
-    this.logger.info('Syncing live matches', {
-      service: 'matches',
-    });
-  }
-
-  async syncTeamsByLeague(leagueApiId: number, season: number): Promise<void> {
-    // TODO: Implement teams sync by league
-    this.logger.info('Syncing teams by league', {
-      service: 'matches',
-      leagueApiId,
-      season,
-    });
   }
 }

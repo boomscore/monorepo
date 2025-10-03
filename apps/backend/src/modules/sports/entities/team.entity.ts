@@ -78,8 +78,8 @@ export class Team {
   @Field({ nullable: true })
   venueImage?: string;
 
-  @Column({ type: 'int', unique: true })
-  apiId: number;
+  @Column({ length: 50, unique: true })
+  apiId: string;
 
   @Column({ type: 'int', nullable: true })
   venueId?: number;

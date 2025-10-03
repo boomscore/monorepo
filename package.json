@@ -9,8 +9,10 @@
   ],
   "scripts": {
     "dev": "pnpm --filter backend dev",
+    "dev:local": "docker-compose up -d postgres redis && sleep 5 && pnpm --filter backend dev",
     "build": "pnpm -r build",
-    "start": "docker-compose up -d && pnpm --filter backend dev",
+    "start": "docker-compose up -d && sleep 10 && pnpm --filter backend dev",
+    "start:local": "docker-compose up -d postgres redis && sleep 5 && pnpm --filter backend dev",
     "start:prod": "pnpm --filter backend start:prod",
     "test": "pnpm -r test",
     "test:cov": "pnpm -r test:cov",

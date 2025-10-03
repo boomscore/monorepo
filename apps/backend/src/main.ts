@@ -1,37 +1,25 @@
-/*
- * Sports Prediction Platform
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
-import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { LoggerService } from './common/services/logger.service';
+import { AppModule } from './app.module';
+import { SportsSyncService } from './modules/sports/services/sports-sync.service';
 
 async function bootstrap() {
-  console.log('Starting application bootstrap...');
-
   try {
-    console.log('Creating NestJS application...');
     const app = await NestFactory.create(AppModule, {
       bufferLogs: true,
     });
-    console.log('NestJS application created successfully');
 
-    console.log('Getting ConfigService and LoggerService...');
     const configService = app.get(ConfigService);
     const logger = app.get(LoggerService);
     app.useLogger(logger);
-    console.log('Services configured successfully');
 
-    console.log('Setting up security middleware...');
     // Security middleware
     app.use(
       helmet({
@@ -42,10 +30,7 @@ async function bootstrap() {
 
     app.use(compression());
     app.use(cookieParser());
-    console.log('Security middleware configured');
 
-    console.log('Setting up CORS...');
-    // CORS configuration
     app.enableCors({
       origin: configService.get<string[]>('CORS_ORIGINS', [
         'http://localhost:3000',
@@ -55,9 +40,7 @@ async function bootstrap() {
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Forwarded-For'],
     });
-    console.log('CORS configured');
 
-    console.log('Setting up global pipes and filters...');
     // Global pipes and filters
     app.useGlobalPipes(
       new ValidationPipe({
@@ -73,13 +56,29 @@ async function bootstrap() {
 
     app.useGlobalFilters(new GlobalExceptionFilter(logger));
     app.useGlobalInterceptors(new ResponseInterceptor(logger));
-    console.log('Global pipes and filters configured');
 
-    console.log('Enabling shutdown hooks...');
     // Graceful shutdown
     app.enableShutdownHooks();
 
-    console.log('Starting server...');
+    // Initialize sports data automatically (core application functionality)
+    if (configService.get<boolean>('SPORTS_INIT_ON_START', true)) {
+      try {
+        logger.log('🚀 MAIN: Starting sports data initialization...');
+        const sportsSyncService = app.get(SportsSyncService);
+        logger.log('🚀 MAIN: Got SportsSyncService, calling initializeIfNeeded...');
+        await sportsSyncService.initializeIfNeeded();
+        logger.log('✅ Sports data initialization complete');
+      } catch (error: unknown) {
+        logger.warn(
+          '⚠️  Sports data initialization failed:',
+          (error instanceof Error ? error.message : String(error)) as any,
+        );
+        // Don't fail the entire app startup for sports data issues
+      }
+    } else {
+      logger.log('❌ SPORTS_INIT_ON_START is disabled');
+    }
+
     const port = configService.get<number>('PORT', 4000);
     await app.listen(port, '0.0.0.0');
 
@@ -88,14 +87,12 @@ async function bootstrap() {
     Logger.log(`Health check: http://localhost:${port}/health`, 'Bootstrap');
     Logger.log(`Metrics endpoint: http://localhost:${port}/metrics`, 'Bootstrap');
   } catch (error) {
-    console.error('Error during bootstrap:', error);
     Logger.error('Failed to start application', error);
     process.exit(1);
   }
 }
 
 bootstrap().catch(error => {
-  console.error('Bootstrap function failed:', error);
   Logger.error('Failed to start application', error);
   process.exit(1);
 });

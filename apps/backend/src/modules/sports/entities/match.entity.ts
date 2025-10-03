@@ -154,8 +154,8 @@ export class Match {
   @Field({ nullable: true })
   weather?: string;
 
-  @Column({ type: 'int', unique: true })
-  apiId: number;
+  @Column({ length: 50, unique: true })
+  apiId: string;
 
   @Column({ type: 'int', nullable: true })
   @Field(() => Int, { nullable: true })

@@ -1,62 +1,36 @@
-/*
- * BoomScore AI
- * Copyright (c) 2024
- * All rights reserved.
- */
-
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
-import { GraphQLJSON } from 'graphql-type-json';
-import { UseGuards } from '@nestjs/common';
+import { Resolver, Query, Mutation } from '@nestjs/graphql';
 import { SportsService } from '../services/sports.service';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@/modules/auth/guards/roles.guard';
-import { Roles } from '@/modules/auth/decorators/roles.decorator';
-import { UserRole } from '@/modules/users/entities/user.entity';
-import { Sport } from '../entities/sport.entity';
+import { LoggerService } from '@/common/services/logger.service';
+import { League } from '../entities/league.entity';
 
-@Resolver(() => Sport)
+@Resolver()
 export class SportsResolver {
-  constructor(private readonly sportsService: SportsService) {}
+  constructor(
+    private readonly sportsService: SportsService,
+    private readonly logger: LoggerService,
+  ) {}
 
-  @Query(() => [Sport])
-  async sports(): Promise<Sport[]> {
-    return this.sportsService.getAllSports();
+  @Query(() => [League])
+  async leagues(): Promise<League[]> {
+    return this.sportsService.getAllLeagues();
   }
 
-  @Query(() => Sport, { nullable: true })
-  async sport(@Args('id') id: string): Promise<Sport> {
-    return this.sportsService.getSportById(id);
+  @Query(() => League)
+  async league(id: string): Promise<League> {
+    return this.sportsService.getLeagueById(id);
   }
 
-  @Query(() => Sport, { nullable: true })
-  async sportBySlug(@Args('slug') slug: string): Promise<Sport> {
-    return this.sportsService.getSportBySlug(slug);
-  }
-
-  @Query(() => [Sport])
-  async searchSports(@Args('query') query: string): Promise<Sport[]> {
-    return this.sportsService.searchSports(query);
-  }
-
-  @Query(() => GraphQLJSON)
-  async sportsStats() {
-    return this.sportsService.getSportsStats();
-  }
-
-  // Admin mutations
-  @Mutation(() => Boolean)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  async initializeSports(): Promise<boolean> {
-    await this.sportsService.initializeSports();
-    return true;
-  }
-
-  @Mutation(() => Boolean)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  async syncLeagues(): Promise<boolean> {
-    await this.sportsService.syncLeagues();
-    return true;
+  @Mutation(() => String)
+  async debugInitializeSports(): Promise<string> {
+    try {
+      this.logger.info('Manual initialization triggered', { service: 'sports-debug' });
+      await this.sportsService.syncLeagues();
+      return 'Sports initialization completed successfully';
+    } catch (error) {
+      this.logger.error('Manual initialization failed', error.stack, {
+        service: 'sports-debug',
+      });
+      throw new Error(`Initialization failed: ${error.message}`);
+    }
   }
 }

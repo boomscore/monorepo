@@ -1,16 +1,11 @@
-/*
- * BoomScore AI
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm'; // Add In operator
+import { Repository } from 'typeorm';
 import { Sport } from '../entities/sport.entity';
 import { League } from '../entities/league.entity';
 import { SportsApiService } from './sports-api.service';
 import { LoggerService } from '@/common/services/logger.service';
+import { SportType, SPORT_CONFIGS } from '../enums/sport-type.enum';
 
 @Injectable()
 export class SportsService {
@@ -23,191 +18,155 @@ export class SportsService {
     private readonly logger: LoggerService,
   ) {}
 
-  async getAllSports(): Promise<Sport[]> {
-    return this.sportRepository.find({
-      relations: ['leagues'],
-      order: { name: 'ASC' },
-    });
-  }
-
-  async getSportById(id: string): Promise<Sport> {
-    const sport = await this.sportRepository.findOne({
-      where: { id },
-      relations: ['leagues'],
-    });
-
-    if (!sport) {
-      throw new Error('Sport not found');
-    }
-
-    return sport;
-  }
-
-  async getSportBySlug(slug: string): Promise<Sport> {
-    const sport = await this.sportRepository.findOne({
-      where: { slug },
-      relations: ['leagues'],
-    });
-
-    if (!sport) {
-      throw new Error('Sport not found');
-    }
-
-    return sport;
-  }
-
-  async initializeSports(): Promise<void> {
-    this.logger.info('Initializing sports from API', {
-      service: 'sports',
-    });
+  async syncLeagues(): Promise<void> {
+    this.logger.info('Starting league sync', { service: 'sports' });
 
     try {
-      // Check if sports already exist
-      const existingSports = await this.sportRepository.count();
-      if (existingSports > 0) {
-        this.logger.info('Sports already initialized, skipping', {
+      const footballConfig = SPORT_CONFIGS[SportType.FOOTBALL];
+
+      this.logger.info(
+        'Fetching leagues from API (trying season filter first for smaller response)',
+        {
           service: 'sports',
-          count: existingSports,
+        },
+      );
+
+      // Add a race condition with timeout to prevent indefinite hanging
+      const apiPromise = this.sportsApiService.getLeagues();
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('League sync timeout after 90 seconds')), 90000),
+      );
+
+      const apiLeagues = await Promise.race([apiPromise, timeoutPromise]);
+
+      if (!apiLeagues || !Array.isArray(apiLeagues)) {
+        this.logger.warn('No leagues data received from API', {
+          service: 'sports',
+          receivedData: typeof apiLeagues,
         });
         return;
       }
 
-      // For now, we'll create football manually since API-Football only supports football
-      const football = this.sportRepository.create({
-        name: 'Football',
-        slug: 'football',
-        description: 'Association football (soccer)',
-        isActive: true,
-      });
-
-      await this.sportRepository.save(football);
-
-      this.logger.info('Sports initialized successfully', {
-        service: 'sports',
-        count: 1,
-      });
-    } catch (error) {
-      this.logger.error('Failed to initialize sports', error.stack, {
-        service: 'sports',
-      });
-      throw error;
-    }
-  }
-
-  async syncLeagues(): Promise<void> {
-    this.logger.info('Syncing leagues from API', {
-      service: 'sports',
-    });
-
-    try {
-      const football = await this.getSportBySlug('football');
-
-      // Get leagues from API-Football
-      const apiLeagues = await this.sportsApiService.getLeagues();
+      this.logger.info(`Processing ${apiLeagues.length} leagues in batches`, { service: 'sports' });
 
       let created = 0;
       let updated = 0;
+      let errors = 0;
 
-      for (const apiLeague of apiLeagues) {
-        let league = await this.leagueRepository.findOne({
-          where: { apiId: apiLeague.league.id },
-        });
+      const batchSize = 50;
+      const totalBatches = Math.ceil(apiLeagues.length / batchSize);
 
-        if (league) {
-          // Update existing league
-          league.name = apiLeague.league.name;
-          league.logo = apiLeague.league.logo;
-          league.country = apiLeague.country.name;
-          league.countryCode = apiLeague.country.code;
-          league.countryFlag = apiLeague.country.flag;
-          league.isActive = true;
-          league.updatedAt = new Date();
+      for (let i = 0; i < apiLeagues.length; i += batchSize) {
+        const batch = apiLeagues.slice(i, i + batchSize);
+        const currentBatch = Math.floor(i / batchSize) + 1;
 
-          await this.leagueRepository.save(league);
-          updated++;
-        } else {
-          // Create new league
-          league = this.leagueRepository.create({
-            sportId: football.id,
-            apiId: apiLeague.league.id,
-            name: apiLeague.league.name,
-            slug: this.generateSlug(apiLeague.league.name),
-            logo: apiLeague.league.logo,
-            country: apiLeague.country.name,
-            countryCode: apiLeague.country.code,
-            countryFlag: apiLeague.country.flag,
-            isActive: true,
-          });
+        this.logger.info(
+          `Processing batch ${currentBatch}/${totalBatches} (${batch.length} leagues)`,
+          {
+            service: 'sports',
+          },
+        );
 
-          await this.leagueRepository.save(league);
-          created++;
+        for (const apiLeague of batch) {
+          try {
+            if (!apiLeague?.league?.id || !apiLeague?.league?.name) {
+              errors++;
+              continue;
+            }
+
+            const apiId = apiLeague.league.id.toString();
+            const name = apiLeague.league.name;
+            const logo = apiLeague.league.logo;
+            const country = apiLeague.country?.name || 'Unknown';
+            const countryCode = apiLeague.country?.code;
+            const countryFlag = apiLeague.country?.flag;
+
+            let league = await this.leagueRepository.findOne({ where: { apiId } });
+
+            if (league) {
+              league.name = name;
+              league.logo = logo;
+              league.country = country;
+              league.countryCode = countryCode;
+              league.countryFlag = countryFlag;
+              league.updatedAt = new Date();
+              await this.leagueRepository.save(league);
+              updated++;
+            } else {
+              league = this.leagueRepository.create({
+                sportId: footballConfig.id,
+                apiId,
+                name,
+                slug: this.generateSlug(name, parseInt(apiId)),
+                logo,
+                country,
+                countryCode,
+                countryFlag,
+                isActive: true,
+              });
+              await this.leagueRepository.save(league);
+              created++;
+            }
+          } catch (error) {
+            this.logger.error('Failed to process league', error.stack, {
+              service: 'sports',
+              leagueId: apiLeague?.league?.id,
+            });
+            errors++;
+          }
         }
+
+        if (currentBatch % 10 === 0 || currentBatch === totalBatches) {
+          this.logger.info(`Progress: ${currentBatch}/${totalBatches} batches completed`, {
+            service: 'sports',
+            created,
+            updated,
+            errors,
+          });
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
 
-      this.logger.info('Leagues sync completed', {
+      this.logger.info('League sync completed successfully', {
         service: 'sports',
         created,
         updated,
+        errors,
         total: apiLeagues.length,
       });
     } catch (error) {
-      this.logger.error('Failed to sync leagues', error.stack, {
-        service: 'sports',
-      });
-      throw error;
+      this.logger.error('League sync failed', error.stack, { service: 'sports' });
+
+      // Don't throw the error - let the app continue without leagues for now
+      this.logger.warn(
+        'Continuing without league sync - leagues can be synced later via API endpoint',
+        {
+          service: 'sports',
+        },
+      );
     }
   }
 
-  async getPopularLeagues(): Promise<League[]> {
-    // Return popular leagues based on predefined list
-    const popularLeagueIds = [39, 40, 78, 135, 61, 2, 3]; // EPL, La Liga, Bundesliga, etc.
+  private generateSlug(name: string, apiId: number): string {
+    return `${name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')}-${apiId}`;
+  }
 
+  async getAllLeagues(): Promise<League[]> {
     return this.leagueRepository.find({
-      where: { apiId: In(popularLeagueIds) },
+      where: { isActive: true },
       order: { name: 'ASC' },
     });
   }
 
-  async searchSports(query: string): Promise<Sport[]> {
-    return this.sportRepository
-      .createQueryBuilder('sport')
-      .where('sport.name ILIKE :query', { query: `%${query}%` })
-      .orWhere('sport.description ILIKE :query', { query: `%${query}%` })
-      .getMany();
-  }
-
-  async searchLeagues(query: string, sportId?: string): Promise<League[]> {
-    const queryBuilder = this.leagueRepository
-      .createQueryBuilder('league')
-      .where('league.name ILIKE :query', { query: `%${query}%` })
-      .orWhere('league.country ILIKE :query', { query: `%${query}%` });
-
-    if (sportId) {
-      queryBuilder.andWhere('league.sportId = :sportId', { sportId });
+  async getLeagueById(id: string): Promise<League> {
+    const league = await this.leagueRepository.findOne({ where: { id } });
+    if (!league) {
+      throw new Error('League not found');
     }
-
-    return queryBuilder.orderBy('league.name', 'ASC').limit(20).getMany();
-  }
-
-  private generateSlug(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  }
-
-  async getSportsStats() {
-    const stats = await this.sportRepository
-      .createQueryBuilder('sport')
-      .leftJoin('sport.leagues', 'league')
-      .select(['sport.id', 'sport.name', 'COUNT(league.id) as leagueCount'])
-      .groupBy('sport.id')
-      .getRawMany();
-
-    return stats.map(stat => ({
-      sportId: stat.sport_id,
-      sportName: stat.sport_name,
-      leagueCount: parseInt(stat.leagueCount) || 0,
-    }));
+    return league;
   }
 }
