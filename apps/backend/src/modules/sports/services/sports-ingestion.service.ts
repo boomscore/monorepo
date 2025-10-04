@@ -655,15 +655,13 @@ export class SportsIngestionService {
           continue;
         }
 
-        // Check if event already exists (using correct database fields)
+        // Check if event already exists (simplified to avoid schema issues)
         const existingEvent = await this.matchEventRepository.findOne({
           where: {
             matchId: match.id,
             teamId: team.id,
             minute: apiEvent.time.elapsed,
             type: this.mapEventType(apiEvent.type),
-            // Use playerName instead of player to match database schema
-            playerName: apiEvent.player?.name,
           },
         });
 
