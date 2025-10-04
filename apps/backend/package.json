@@ -1,7 +1,7 @@
 {
   "name": "@boomscore/backend",
   "version": "1.0.0",
-  "description": "BoomScore AI sports prediction platform backend API",
+  "description": "  sports prediction platform backend API",
   "private": true,
   "license": "MIT",
   "scripts": {

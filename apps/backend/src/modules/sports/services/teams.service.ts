@@ -1,8 +1,3 @@
-/*
- * BoomScore AI
- * Copyright (c) 2024
- * All rights reserved.
- */
 
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';

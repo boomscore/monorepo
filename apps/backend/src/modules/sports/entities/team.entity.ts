@@ -1,9 +1,3 @@
-/*
- * Sports Prediction Platform
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -132,7 +126,6 @@ export class Team {
   @Field()
   updatedAt: Date;
 
-  // Relationships
   @ManyToOne(() => League, league => league.teams, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'leagueId' })
   @Field(() => League)
@@ -144,7 +137,6 @@ export class Team {
   @OneToMany(() => Match, match => match.awayTeam)
   awayMatches: Match[];
 
-  // Helper methods
   @Field()
   get displayName(): string {
     return this.shortName || this.name;
@@ -179,7 +171,7 @@ export class Team {
   @Field({ nullable: true })
   get currentForm(): string | null {
     if (!this.form || this.form.length === 0) return null;
-    return this.form.slice(-5).join(''); // Last 5 results
+    return this.form.slice(-5).join(''); 
   }
 
   @Field()
@@ -192,7 +184,7 @@ export class Team {
     if (!this.form) this.form = [];
     this.form.push(result);
     if (this.form.length > 10) {
-      this.form = this.form.slice(-10); // Keep only last 10 results
+      this.form = this.form.slice(-10);
     }
   }
 

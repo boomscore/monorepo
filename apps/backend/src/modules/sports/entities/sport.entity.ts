@@ -1,9 +1,3 @@
-/*
- * Sports Prediction Platform
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -67,12 +61,10 @@ export class Sport {
   @Field()
   updatedAt: Date;
 
-  // Relationships
   @OneToMany(() => League, league => league.sport)
   @Field(() => [League])
   leagues: League[];
 
-  // Helper methods
   @Field()
   get displayName(): string {
     return this.name;

@@ -1,7 +1,7 @@
 {
   "name": "boomscore",
   "version": "1.0.0",
-  "description": "BoomScore AI - Enterprise sports prediction platform with AI-driven insights",
+  "description": "  - Enterprise sports prediction platform with AI-driven insights",
   "private": true,
   "workspaces": [
     "apps/*",

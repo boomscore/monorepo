@@ -6,6 +6,7 @@ import { Sport } from '../entities/sport.entity';
 import { League } from '../entities/league.entity';
 import { Team } from '../entities/team.entity';
 import { Match } from '../entities/match.entity';
+import { MatchStatus } from '../entities/match.entity';
 import { SportsIngestionService } from './sports-ingestion.service';
 import { ConfigService } from '@nestjs/config';
 
@@ -31,43 +32,35 @@ export class SportsSyncService {
    * Initialize sports data only if needed
    */
   async initializeIfNeeded(): Promise<void> {
-    // TEMPORARILY FORCE INITIALIZATION - Remove this after first successful run
-    this.isInitialized = false;
-
-    this.logger.log(`🔍 DEBUG: isInitialized = ${this.isInitialized}`);
+    // this.isInitialized = false;
 
     if (this.isInitialized) {
-      this.logger.log('🏈 Sports data already initialized, skipping');
+      this.logger.log('Sports data already initialized, skipping');
       return;
     }
 
-    this.logger.log('🏈 Starting sports data initialization...');
+    this.logger.log('Starting sports data initialization...');
 
     try {
       // Check if we have basic sports data
       const sportsCount = await this.sportRepository.count();
       const leaguesCount = await this.leagueRepository.count();
 
-      this.logger.log(`📊 Current data: ${sportsCount} sports, ${leaguesCount} leagues`);
-
       // FORCE full initialization if no leagues exist (comprehensive data access)
       if (leaguesCount === 0) {
         this.logger.log(
-          '🔄 No leagues found - performing FULL initialization for comprehensive football data...',
+          'No leagues found - performing FULL initialization for comprehensive football data...',
         );
         await this.performFullInitialization();
       } else {
-        this.logger.log("✅ Basic data exists, checking freshness and syncing today's matches...");
+        this.logger.log("Basic data exists, checking freshness and syncing today's matches...");
         await this.checkAndUpdateStaleData();
       }
 
       this.isInitialized = true;
-      this.logger.log('🎉 Sports data initialization complete');
+      this.logger.log('sports data initialization complete');
     } catch (error) {
-      this.logger.error(
-        '❌ Failed to initialize sports data:',
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error('Failed to initialize sports data:', error.message);
       throw error;
     }
   }
@@ -76,24 +69,24 @@ export class SportsSyncService {
    * Perform full initialization (only for empty database)
    */
   private async performFullInitialization(): Promise<void> {
-    this.logger.log('🚀 Performing full sports data initialization...');
+    this.logger.log('Performing full sports data initialization...');
 
     try {
       // Initialize sports
-      this.logger.log('🏈 Step 1: Initializing sports...');
+      this.logger.log('Step 1: Initializing sports...');
       await this.sportsIngestionService.initializeSports();
 
       // Sync all leagues from API (comprehensive coverage)
-      this.logger.log('🌍 Step 2: Syncing leagues from API...');
+      this.logger.log('Step 2: Syncing leagues from API...');
       await this.sportsIngestionService.syncLeagues();
 
       // Sync current season data (teams and today matches)
-      this.logger.log('📅 Step 3: Syncing current season data...');
+      this.logger.log('Step 3: Syncing current season data...');
       await this.syncCurrentSeasonData();
 
-      this.logger.log('✅ Full initialization complete');
+      this.logger.log('Full initialization complete');
     } catch (error) {
-      this.logger.error('❌ Full initialization failed:', error);
+      this.logger.error('Full initialization failed:', error);
       throw error;
     }
   }
@@ -111,17 +104,17 @@ export class SportsSyncService {
       .where('match.startTime >= :oneDayAgo', { oneDayAgo })
       .getCount();
 
-    this.logger.log(`📊 Found ${recentMatchesCount} recent matches in last 24 hours`);
+    this.logger.log(`Found ${recentMatchesCount} recent matches in last 24 hours`);
 
     // Always sync today's matches to ensure freshness
-    this.logger.log("🔄 Syncing today's matches to ensure fresh data...");
+    this.logger.log("Syncing today's matches to ensure fresh data...");
     await this.sportsIngestionService.syncTodayMatches();
 
     if (recentMatchesCount === 0) {
-      this.logger.log('🔄 No recent matches found, syncing current season data...');
+      this.logger.log('No recent matches found, syncing current season data...');
       await this.syncCurrentSeasonData();
     } else {
-      this.logger.log('✅ Recent matches found, data freshness check complete');
+      this.logger.log('Recent matches found, data freshness check complete');
     }
   }
 
@@ -130,18 +123,16 @@ export class SportsSyncService {
    */
   private async syncCurrentSeasonData(): Promise<void> {
     try {
-      // Get active leagues (you can customize this query)
       const activeLeagues = await this.leagueRepository
         .createQueryBuilder('league')
         .where('league.isActive = :isActive', { isActive: true })
-        .limit(10) // Limit to avoid overwhelming the API
+        .limit(10)
         .getMany();
 
       this.logger.log(`Syncing data for ${activeLeagues.length} active leagues...`);
 
       for (const league of activeLeagues) {
         try {
-          // Sync teams for this league
           if (league.apiId) {
             await this.sportsIngestionService.syncTeams(league.apiId, new Date().getFullYear());
           }
@@ -180,10 +171,10 @@ export class SportsSyncService {
   }
 
   /**
-   * Unified live matches sync - runs every 3 minutes during match hours
+   * Unified live matches sync - runs every 1 minutes during match hours
    * Optimized single sync process for real-time updates
    */
-  @Cron('*/3 * * * *') // Every 3 minutes - balanced for API usage and real-time feel
+  @Cron('*/1 * * * *') // Every 1 minutes
   async unifiedLiveSync(): Promise<void> {
     if (!this.configService.get<boolean>('SPORTS_SYNC_ENABLED', true)) {
       return;
@@ -199,9 +190,8 @@ export class SportsSyncService {
       // Check if we have any matches that need updating (live or recently concluded)
       const relevantMatches = await this.matchRepository
         .createQueryBuilder('match')
-        .where('(match.isLive = :isLive OR match.status IN (:...recentStatuses))', {
-          isLive: true,
-          recentStatuses: ['live', 'halftime', 'finished'], // Include finished to catch status changes
+        .where('match.status IN (:...liveAndRecentStatuses)', {
+          liveAndRecentStatuses: ['LIVE', 'HALFTIME', 'FINISHED'],
         })
         .andWhere('match.startTime >= :twoDaysAgo AND match.startTime <= :tomorrow', {
           twoDaysAgo: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
@@ -210,12 +200,10 @@ export class SportsSyncService {
         .getCount();
 
       if (relevantMatches > 0) {
-        this.logger.debug(
-          `🔴 Running unified live sync for ${relevantMatches} active/recent matches`,
-        );
+        this.logger.debug(`Running unified live sync for ${relevantMatches} active/recent matches`);
         await this.sportsIngestionService.updateLiveMatches();
       } else {
-        this.logger.debug('✅ No active matches found, skipping live sync');
+        this.logger.debug('No active matches found, skipping live sync');
       }
     } catch (error) {
       this.logger.warn('Unified live sync failed:', error);
@@ -257,8 +245,8 @@ export class SportsSyncService {
       const result = await this.matchRepository
         .createQueryBuilder()
         .update('matches')
-        .set({ isLive: false })
-        .where('isLive = :isLive', { isLive: true })
+        .set({ status: MatchStatus.FINISHED })
+        .where('status IN (:...liveStatuses)', { liveStatuses: ['LIVE', 'HALFTIME'] })
         .andWhere('date < :staleThreshold', { staleThreshold })
         .execute();
 
@@ -275,17 +263,16 @@ export class SportsSyncService {
    * Called when users navigate to dates without match data
    */
   async syncMatchesForDate(date: string): Promise<{ message: string; matchCount: number }> {
-    this.logger.log(`🕰️ Syncing matches for date: ${date}`);
+    this.logger.log(`Syncing matches for date: ${date}`);
 
     try {
-      // Check if we already have matches for this date
       const existingCount = await this.matchRepository
         .createQueryBuilder('match')
         .where('DATE(match.startTime) = :date', { date })
         .getCount();
 
       if (existingCount > 0) {
-        this.logger.log(`✅ Found ${existingCount} existing matches for ${date}`);
+        this.logger.log(`Found ${existingCount} existing matches for ${date}`);
         return {
           message: `Found ${existingCount} matches for ${date}`,
           matchCount: existingCount,
@@ -296,11 +283,11 @@ export class SportsSyncService {
       const matchCount = await this.sportsIngestionService.syncMatchesForDate(date);
 
       const message = `Successfully synced ${matchCount} matches for ${date}`;
-      this.logger.log(`✅ ${message}`);
+      this.logger.log(`${message}`);
 
       return { message, matchCount };
     } catch (error) {
-      this.logger.error(`❌ Failed to sync matches for date ${date}:`, error);
+      this.logger.error(`Failed to sync matches for date ${date}:`, error);
       throw error;
     }
   }
@@ -320,7 +307,6 @@ export class SportsSyncService {
     };
 
     try {
-      // Get all active leagues
       const leagues = await this.leagueRepository.find({
         where: { isActive: true },
       });
@@ -338,7 +324,6 @@ export class SportsSyncService {
         }
       }
 
-      // Update counts
       stats.teams = await this.teamRepository.count();
       stats.matches = await this.matchRepository.count();
 
@@ -364,11 +349,11 @@ export class SportsSyncService {
   } {
     return {
       initialized: this.isInitialized,
-      lastSync: null, // You can track this if needed
+      lastSync: null,
       nextScheduledSync: 'Optimized sync schedule active',
       syncProcesses: [
         'Daily Sync: Every day at 6 AM UTC (league/team data)',
-        'Live Sync: Every 3 minutes during match hours (6 AM - 2 AM UTC)',
+        'Live Sync: Every 1 minutes during match hours (6 AM - 2 AM UTC)',
         'Today Sync: Every 15 minutes (fresh fixture data)',
         'Cleanup: Every hour (remove stale live flags)',
         'Time-travel: On-demand sync for historical dates',

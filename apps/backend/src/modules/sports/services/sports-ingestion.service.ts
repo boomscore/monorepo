@@ -1,10 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 
 import {
   Sport,
-  SportType,
   League,
   LeagueType,
   Season,
@@ -63,7 +62,6 @@ export class SportsIngestionService {
     this.logger.log('Initializing sports data...');
 
     try {
-      // Create Football sport if it doesn't exist
       let footballSport = await this.sportRepository.findOne({
         where: { slug: 'football' },
       });
@@ -72,7 +70,7 @@ export class SportsIngestionService {
         footballSport = this.sportRepository.create({
           name: 'Football',
           slug: 'football',
-          description: 'Association Football (Soccer)',
+          description: 'Association Football',
           isActive: true,
           sortOrder: 1,
           apiId: '1',
@@ -81,7 +79,6 @@ export class SportsIngestionService {
         this.logger.log('Created Football sport');
       }
 
-      // Create Basketball sport if it doesn't exist
       let basketballSport = await this.sportRepository.findOne({
         where: { slug: 'basketball' },
       });
@@ -127,14 +124,6 @@ export class SportsIngestionService {
       const apiLeagues = await this.sportsApiService.getLeagues();
       this.logger.log(`Fetched ${apiLeagues.length} leagues from API`);
 
-      // Focus on major leagues for now (defensive against missing fields)
-      // REMOVED: No longer filtering to major leagues only - giving users access to all football data
-      // const majorLeagues = apiLeagues.filter(league => this.isMajorLeague(league?.league?.name));
-
-      this.logger.log(
-        `🌍 Processing ALL ${apiLeagues.length} leagues for comprehensive football data coverage`,
-      );
-
       let syncedCount = 0;
       let errorCount = 0;
 
@@ -143,7 +132,7 @@ export class SportsIngestionService {
       for (let i = 0; i < apiLeagues.length; i += batchSize) {
         const batch = apiLeagues.slice(i, i + batchSize);
         this.logger.log(
-          `📦 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(apiLeagues.length / batchSize)} (${batch.length} leagues)`,
+          `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(apiLeagues.length / batchSize)} (${batch.length} leagues)`,
         );
 
         for (const apiLeague of batch) {
@@ -153,15 +142,14 @@ export class SportsIngestionService {
               if (league) {
                 syncedCount++;
                 if (syncedCount % 10 === 0) {
-                  // Log every 10th league to avoid spam
-                  this.logger.log(`✅ Progress: ${syncedCount} leagues synced so far...`);
+                  this.logger.log(`Progress: ${syncedCount} leagues synced so far...`);
                 }
               }
             } else {
-              this.logger.debug(`⚠️ Skipping league with missing data`);
+              this.logger.debug(`Skipping league with missing data`);
             }
           } catch (error) {
-            this.logger.error(`❌ Failed to sync league ${apiLeague?.league?.name}:`, error);
+            this.logger.error(`Failed to sync league ${apiLeague?.league?.name}:`, error);
             errorCount++;
           }
         }
@@ -346,7 +334,7 @@ export class SportsIngestionService {
     try {
       // Get matches currently marked as live in our database
       const dbLiveMatches = await this.matchRepository.find({
-        where: { isLive: true },
+        where: { status: In([MatchStatus.LIVE, MatchStatus.HALFTIME]) },
         select: ['id', 'apiId'],
         take: 50, // Limit to avoid overwhelming API
       });
@@ -604,21 +592,26 @@ export class SportsIngestionService {
 
       // Update match data
       match.status = this.mapMatchStatus(apiMatch.fixture.status.short);
+      match.minute = apiMatch.fixture.status.elapsed;
 
-      if (apiMatch.goals) {
+      // Set current scores (priority: goals for live matches, fulltime for finished matches)
+      const isMatchFinished = match.status === MatchStatus.FINISHED;
+
+      if (isMatchFinished && apiMatch.score?.fulltime) {
+        // For finished matches, use fulltime scores
+        match.homeScore = apiMatch.score.fulltime.home || 0;
+        match.awayScore = apiMatch.score.fulltime.away || 0;
+      } else if (apiMatch.goals) {
+        // For live/ongoing matches, use current goals
         match.homeScore = apiMatch.goals.home || 0;
         match.awayScore = apiMatch.goals.away || 0;
       }
 
+      // Set period-specific scores
       if (apiMatch.score) {
         if (apiMatch.score.halftime) {
           match.homeHalfTimeScore = apiMatch.score.halftime.home || 0;
           match.awayHalfTimeScore = apiMatch.score.halftime.away || 0;
-        }
-
-        if (apiMatch.score.fulltime) {
-          match.homeScore = apiMatch.score.fulltime.home || 0;
-          match.awayScore = apiMatch.score.fulltime.away || 0;
         }
 
         if (apiMatch.score.extratime) {
@@ -644,6 +637,7 @@ export class SportsIngestionService {
     try {
       const match = await this.matchRepository.findOne({
         where: { apiId: matchApiId },
+        relations: ['homeTeam', 'awayTeam'], // Load teams to determine isHome
       });
 
       if (!match) {
@@ -661,14 +655,15 @@ export class SportsIngestionService {
           continue;
         }
 
-        // Check if event already exists
+        // Check if event already exists (using correct database fields)
         const existingEvent = await this.matchEventRepository.findOne({
           where: {
             matchId: match.id,
             teamId: team.id,
             minute: apiEvent.time.elapsed,
             type: this.mapEventType(apiEvent.type),
-            player: apiEvent.player?.name,
+            // Use playerName instead of player to match database schema
+            playerName: apiEvent.player?.name,
           },
         });
 
@@ -677,12 +672,14 @@ export class SportsIngestionService {
             type: this.mapEventType(apiEvent.type),
             minute: apiEvent.time.elapsed,
             extraTime: apiEvent.time.extra,
-            player: apiEvent.player?.name,
-            assistPlayer: apiEvent.assist?.name,
+            // Use playerName and assistPlayerName to match database schema
+            playerName: apiEvent.player?.name,
+            assistPlayerName: apiEvent.assist?.name,
             detail: apiEvent.detail,
             description: apiEvent.comments,
             matchId: match.id,
             teamId: team.id,
+            isHome: apiEvent.team.id.toString() === match.homeTeam.apiId, // Determine if home team
           });
 
           await this.matchEventRepository.save(matchEvent);

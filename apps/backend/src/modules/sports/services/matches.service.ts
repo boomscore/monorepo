@@ -1,15 +1,9 @@
-/*
- * BoomScore AI
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Match, MatchStatus } from '../entities/match.entity';
-import { MatchEvent } from '../entities/match-event.entity';
-import { SportsApiService } from './sports-api.service';
+import { MatchEvent, MatchEventType } from '../entities/match-event.entity';
+import { SportsApiService, ApiSportsEvent } from './sports-api.service';
 import { LoggerService } from '@/common/services/logger.service';
 
 export interface MatchFilters {
@@ -261,23 +255,17 @@ export class MatchesService {
   }
 
   async updateMatchFromApi(apiData: any): Promise<Match> {
-    // This would sync match data from API-Football
-    // Implementation would map API data to Match entity
-
     let match = await this.matchRepository.findOne({
       where: { apiId: apiData.fixture.id },
       relations: ['homeTeam', 'awayTeam', 'league'],
     });
 
     if (!match) {
-      // Create new match if doesn't exist
       match = this.matchRepository.create({
         apiId: apiData.fixture.id,
-        // Map other fields from apiData
       });
     }
 
-    // Update match data
     match.status = this.mapApiStatus(apiData.fixture.status.short);
     match.homeScore = apiData.goals.home;
     match.awayScore = apiData.goals.away;
@@ -320,18 +308,97 @@ export class MatchesService {
     });
   }
 
-  // Missing methods for resolvers
   async findLiveMatches(): Promise<Match[]> {
     return this.findMatches({ isLive: true });
   }
 
-  async getMatchEvents(matchId: string): Promise<any[]> {
+  async getMatchEvents(matchId: string): Promise<MatchEvent[]> {
     const match = await this.findById(matchId);
     if (!match) {
       throw new Error('Match not found');
     }
 
-    // TODO: Implement match events fetching
-    return [];
+    const existingEvents = await this.matchEventRepository.find({
+      where: { matchId: match.id },
+      relations: ['team'],
+      order: { minute: 'ASC', createdAt: 'ASC' },
+    });
+
+    if (existingEvents.length > 0) {
+      return existingEvents;
+    }
+
+    const fixtureApiId = parseInt(match.apiId, 10);
+    if (Number.isNaN(fixtureApiId)) {
+      this.logger.warn(`Cannot fetch events: invalid match.apiId ${match.apiId} for ${match.id}`);
+      return [];
+    }
+
+    try {
+      const apiEvents = await this.sportsApiService.getMatchEvents(fixtureApiId);
+
+      if (!apiEvents || apiEvents.length === 0) {
+        return [];
+      }
+
+      const eventsToSave: MatchEvent[] = [];
+
+      for (const apiEvent of apiEvents) {
+        const isHome = apiEvent.team?.id?.toString() === match.homeTeam?.apiId;
+        const isAway = apiEvent.team?.id?.toString() === match.awayTeam?.apiId;
+
+        const eventEntity = this.matchEventRepository.create({
+          matchId: match.id,
+          teamId: isHome ? match.homeTeam?.id : isAway ? match.awayTeam?.id : undefined,
+          type: this.mapApiEventType(apiEvent),
+          minute: apiEvent.time?.elapsed ?? 0,
+          extraTime: apiEvent.time?.extra ?? undefined,
+          playerName: apiEvent.player?.name ?? undefined,
+          assistPlayerName: apiEvent.assist?.name ?? undefined,
+          detail: apiEvent.detail ?? undefined,
+          description: apiEvent.comments ?? undefined,
+          isHome: !!isHome,
+          apiEventId: undefined,
+          metadata: undefined,
+        });
+
+        eventsToSave.push(eventEntity);
+      }
+
+      if (eventsToSave.length > 0) {
+        await this.matchEventRepository.save(eventsToSave);
+      }
+
+      return this.matchEventRepository.find({
+        where: { matchId: match.id },
+        relations: ['team'],
+        order: { minute: 'ASC', createdAt: 'ASC' },
+      });
+    } catch (error) {
+      this.logger.error('Failed to fetch or persist match events', error as any);
+      return [];
+    }
+  }
+
+  private mapApiEventType(apiEvent: ApiSportsEvent): MatchEventType {
+    const type = (apiEvent.type || '').toLowerCase();
+    const detail = (apiEvent.detail || '').toLowerCase();
+
+    if (type === 'goal') {
+      if (detail === 'own goal') return MatchEventType.OWN_GOAL;
+      if (detail === 'penalty') return MatchEventType.PENALTY_GOAL;
+      if (detail === 'missed penalty') return MatchEventType.MISSED_PENALTY;
+      return MatchEventType.GOAL;
+    }
+
+    if (type === 'card') {
+      if (detail === 'red card') return MatchEventType.RED_CARD;
+      return MatchEventType.YELLOW_CARD;
+    }
+
+    if (type === 'subst') return MatchEventType.SUBSTITUTION;
+    if (type === 'var') return MatchEventType.VAR;
+
+    return MatchEventType.GOAL;
   }
 }

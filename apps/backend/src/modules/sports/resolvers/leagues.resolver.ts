@@ -1,9 +1,3 @@
-/*
- * BoomScore AI
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { Resolver, Query, Args } from '@nestjs/graphql';
 import { GraphQLJSON } from 'graphql-type-json';
 import { LeaguesService } from '../services/leagues.service';

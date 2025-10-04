@@ -1,9 +1,3 @@
-/*
- * BoomScore AI
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { DataSource } from 'typeorm';
 
 // For migrations and CLI usage

@@ -1,9 +1,3 @@
-/*
- * BoomScore AI
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class ConvertApiIdToString1700000000003 implements MigrationInterface {

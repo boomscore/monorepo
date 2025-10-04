@@ -1,5 +1,5 @@
 /*
- * BoomScore AI
+ *
  * Copyright (c) 2024
  * All rights reserved.
  */
@@ -223,7 +223,7 @@ export class ChatService {
     customPrompt?: string,
     toolResults?: Array<{ tool: string; result: any }>,
   ): string {
-    let prompt = `You are BoomScore AI, an intelligent sports assistant specializing in football predictions and analysis.
+    let prompt = `You are  , an intelligent sports assistant specializing in football predictions and analysis.
 
 You help users with:
 - Sports data analysis and insights

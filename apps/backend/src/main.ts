@@ -63,20 +63,20 @@ async function bootstrap() {
     // Initialize sports data automatically (core application functionality)
     if (configService.get<boolean>('SPORTS_INIT_ON_START', true)) {
       try {
-        logger.log('🚀 MAIN: Starting sports data initialization...');
+        logger.log('MAIN: Starting sports data initialization...');
         const sportsSyncService = app.get(SportsSyncService);
-        logger.log('🚀 MAIN: Got SportsSyncService, calling initializeIfNeeded...');
+        logger.log('MAIN: Got SportsSyncService, calling initializeIfNeeded...');
         await sportsSyncService.initializeIfNeeded();
-        logger.log('✅ Sports data initialization complete');
+        logger.log('Sports data initialization complete');
       } catch (error: unknown) {
         logger.warn(
-          '⚠️  Sports data initialization failed:',
+          'Sports data initialization failed:',
           (error instanceof Error ? error.message : String(error)) as any,
         );
         // Don't fail the entire app startup for sports data issues
       }
     } else {
-      logger.log('❌ SPORTS_INIT_ON_START is disabled');
+      logger.log('SPORTS_INIT_ON_START is disabled');
     }
 
     const port = configService.get<number>('PORT', 4000);

@@ -235,7 +235,6 @@ export class SportsApiService {
       },
     });
 
-    // Add request/response interceptors for logging
     this.httpClient.interceptors.request.use(
       (config) => {
         this.logger.debug(
@@ -430,10 +429,8 @@ export class SportsApiService {
     }
   }
 
-  // Basketball API methods (using different base URL)
   async getBasketballLeagues(): Promise<any[]> {
     try {
-      // Switch to basketball API
       const basketballClient = axios.create({
         baseURL: 'https://v1.basketball.api-sports.io',
         timeout: this.config.timeout,
@@ -495,7 +492,6 @@ export class SportsApiService {
     }
   }
 
-  // Utility methods
   isConfigured(): boolean {
     return !!this.config.apiKey;
   }
@@ -538,7 +534,6 @@ export class SportsApiService {
 
     const oddsMap: Record<number, ApiSportsOdds[]> = {};
 
-    // Process in batches to avoid rate limits
     const batchSize = 10;
     for (let i = 0; i < fixtureIds.length; i += batchSize) {
       const batch = fixtureIds.slice(i, i + batchSize);
@@ -562,7 +557,6 @@ export class SportsApiService {
         oddsMap[result.fixtureId] = result.odds;
       }
 
-      // Small delay between batches to respect rate limits
       if (i + batchSize < fixtureIds.length) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
@@ -608,7 +602,6 @@ export class SportsApiService {
     }
 
     try {
-      // For basketball, we can get team statistics from the fixture details
       const params: Record<string, string | number> = {
         id: fixtureId,
       };
@@ -627,13 +620,9 @@ export class SportsApiService {
         return {};
       }
 
-      // Extract basic stats from fixture data
-      // In a real implementation, you'd call a dedicated basketball stats endpoint
       return {
-        // Basic game info
         fixtureId: fixture.id,
         elapsed: fixture.status?.elapsed || 0,
-        // Basketball-specific stats (would come from dedicated endpoints)
         homePace: 100, // Default pace value - possessions per game
         awayPace: 100, // Default pace value
         homeOffRating: 110, // Default offensive rating - points per 100 possessions

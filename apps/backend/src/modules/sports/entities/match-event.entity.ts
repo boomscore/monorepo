@@ -1,9 +1,3 @@
-/*
- * Sports Prediction Platform
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -79,11 +73,18 @@ export class MatchEvent {
 
   @Column({ length: 100, nullable: true })
   @Field({ nullable: true })
-  player?: string;
+  playerName?: string; // Matches database schema
 
   @Column({ length: 100, nullable: true })
   @Field({ nullable: true })
-  assistPlayer?: string;
+  assistPlayerName?: string; // Matches database schema
+
+  @Column('uuid', { nullable: true })
+  playerId?: string; // Matches database schema
+
+  @Column({ type: 'boolean', default: false })
+  @Field()
+  isHome: boolean; // Matches database schema
 
   @Column({ length: 100, nullable: true })
   @Field({ nullable: true })
@@ -133,6 +134,17 @@ export class MatchEvent {
   @Field(() => Team, { nullable: true })
   team?: Team;
 
+  // Backward compatibility getters
+  @Field({ nullable: true })
+  get player(): string | undefined {
+    return this.playerName;
+  }
+
+  @Field({ nullable: true })
+  get assistPlayer(): string | undefined {
+    return this.assistPlayerName;
+  }
+
   // Helper methods
   @Field()
   get displayMinute(): string {
@@ -165,17 +177,17 @@ export class MatchEvent {
   get displayText(): string {
     switch (this.type) {
       case MatchEventType.GOAL:
-        return `Goal by ${this.player}${this.assistPlayer ? ` (assist: ${this.assistPlayer})` : ''}`;
+        return `Goal by ${this.playerName}${this.assistPlayerName ? ` (assist: ${this.assistPlayerName})` : ''}`;
       case MatchEventType.OWN_GOAL:
-        return `Own goal by ${this.player}`;
+        return `Own goal by ${this.playerName}`;
       case MatchEventType.PENALTY_GOAL:
-        return `Penalty goal by ${this.player}`;
+        return `Penalty goal by ${this.playerName}`;
       case MatchEventType.MISSED_PENALTY:
-        return `Penalty missed by ${this.player}`;
+        return `Penalty missed by ${this.playerName}`;
       case MatchEventType.YELLOW_CARD:
-        return `Yellow card for ${this.player}`;
+        return `Yellow card for ${this.playerName}`;
       case MatchEventType.RED_CARD:
-        return `Red card for ${this.player}`;
+        return `Red card for ${this.playerName}`;
       case MatchEventType.SUBSTITUTION:
         return `Substitution: ${this.playerOut} off, ${this.playerIn} on`;
       default:

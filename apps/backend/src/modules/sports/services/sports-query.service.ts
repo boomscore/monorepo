@@ -510,7 +510,6 @@ export class SportsQueryService {
 
     const matches = await this.matchRepository.find({
       where: {
-        isLive: true,
         status: In([MatchStatus.LIVE, MatchStatus.HALFTIME]),
       },
       relations: ['homeTeam', 'awayTeam', 'league'],
