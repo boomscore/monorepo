@@ -1,9 +1,3 @@
-/*
- * Sports Prediction Platform
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { LoggerService } from '@/common/services/logger.service';
@@ -80,7 +74,7 @@ interface ChatCompletionResponse {
 @Injectable()
 export class OpenAIProviderService {
   private readonly openai: OpenAI;
-  private readonly model: string = 'gpt-5'; // Updated to GPT-5!
+  private readonly model: string = 'gpt-4o'; // Using GPT-4o (latest available)
   private readonly costPer1kTokens = {
     'gpt-5': { input: 0.03, output: 0.06 }, // GPT-5 pricing (estimated)
     'gpt-4o': { input: 0.025, output: 0.05 }, // GPT-4o pricing
@@ -225,7 +219,7 @@ export class OpenAIProviderService {
   }
 
   private calculateCost(promptTokens: number, completionTokens: number): number {
-    const modelPricing = this.costPer1kTokens[this.model] || this.costPer1kTokens['gpt-5'];
+    const modelPricing = this.costPer1kTokens[this.model] || this.costPer1kTokens['gpt-4o'];
 
     const inputCost = (promptTokens / 1000) * modelPricing.input;
     const outputCost = (completionTokens / 1000) * modelPricing.output;

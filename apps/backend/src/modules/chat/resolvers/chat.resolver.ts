@@ -1,9 +1,3 @@
-/*
- *
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { Resolver, Mutation, Query, Args, Context } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { ChatService } from '../services/chat.service';

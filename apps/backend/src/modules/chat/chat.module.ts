@@ -1,9 +1,3 @@
-/*
- * Sports Prediction Platform
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -15,7 +9,9 @@ import { ChatMessage } from './entities/chat-message.entity';
 import { ChatService } from './services/chat.service';
 import { ConversationService } from './services/conversation.service';
 import { ChatToolsService } from './services/chat-tools.service';
-import { ChatPlannerService } from './services/chat-planner.service';
+import { ChatNlpService } from './services/chat-nlp.service';
+import { ChatPlannerLlmService } from './services/chat-planner-llm.service';
+import { ChatToolsInitService } from './services/chat-tools-init.service';
 
 // Resolvers
 import { ChatResolver } from './resolvers/chat.resolver';
@@ -36,10 +32,7 @@ import { UsersModule } from '@/modules/users/users.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Conversation,
-      ChatMessage,
-    ]),
+    TypeOrmModule.forFeature([Conversation, ChatMessage]),
     SportsModule,
     PredictionsModule,
     UsersModule,
@@ -49,12 +42,14 @@ import { UsersModule } from '@/modules/users/users.module';
     ChatService,
     ConversationService,
     ChatToolsService,
-    ChatPlannerService,
-    
+    ChatNlpService,
+    ChatPlannerLlmService,
+    ChatToolsInitService,
+
     // Resolvers
     ChatResolver,
     ConversationResolver,
-    
+
     // Tools
     MatchesTool,
     LiveMatchesTool,
@@ -63,9 +58,6 @@ import { UsersModule } from '@/modules/users/users.module';
     TeamStatsTool,
     LeagueStandingsTool,
   ],
-  exports: [
-    ChatService,
-    ConversationService,
-  ],
+  exports: [ChatService, ConversationService],
 })
 export class ChatModule {}

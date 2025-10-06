@@ -1,9 +1,3 @@
-/*
- *
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { Resolver, Query, Args } from '@nestjs/graphql';
 import { TeamsService } from '../services/teams.service';
 import { Team } from '../entities/team.entity';

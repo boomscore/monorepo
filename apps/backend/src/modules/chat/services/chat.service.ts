@@ -1,9 +1,3 @@
-/*
- *
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,7 +6,8 @@ import { Conversation } from '../entities/conversation.entity';
 import { User } from '@/modules/users/entities/user.entity';
 import { LoggerService } from '@/common/services/logger.service';
 import { ChatToolsService } from './chat-tools.service';
-import { ChatPlannerService } from './chat-planner.service';
+import { ChatNlpService } from './chat-nlp.service';
+import { ChatPlannerLlmService } from './chat-planner-llm.service';
 import { OpenAIProviderService } from '@/modules/predictions/services/openai-provider.service';
 
 export interface SendMessageInput {
@@ -36,7 +31,8 @@ export class ChatService {
     private readonly conversationRepository: Repository<Conversation>,
     private readonly logger: LoggerService,
     private readonly chatToolsService: ChatToolsService,
-    private readonly chatPlannerService: ChatPlannerService,
+    private readonly chatNlpService: ChatNlpService,
+    private readonly chatPlannerLlm: ChatPlannerLlmService,
     private readonly openaiProvider: OpenAIProviderService,
   ) {}
 
@@ -69,6 +65,7 @@ export class ChatService {
       conversation,
       input.message,
       input.customSystemPrompt,
+      user.id,
     );
 
     // Create assistant message
@@ -139,19 +136,20 @@ export class ChatService {
     conversation: Conversation,
     message: string,
     customSystemPrompt?: string,
+    userId?: string,
   ): Promise<string> {
     try {
       // Get conversation history
       const messages = await this.getConversationMessages(conversation.id);
 
-      // Plan tool usage
-      const toolPlan = await this.chatPlannerService.planTools(message, messages);
-
-      // Execute tools if needed
-      let toolResults = [];
-      if (toolPlan.tools.length > 0) {
-        toolResults = await this.executeTools(toolPlan.tools, message);
-      }
+      // Analyze message with NLP and plan with LLM
+      const nlp = await this.chatNlpService.analyze(message);
+      const llmPlan = await this.chatPlannerLlm.plan(message, nlp);
+      const toolResults = await this.executePlannedTools(
+        llmPlan.steps,
+        conversation.id,
+        userId || 'system',
+      );
 
       // Generate response
       const systemPrompt = this.buildSystemPrompt(customSystemPrompt, toolResults);
@@ -193,29 +191,28 @@ export class ChatService {
     });
   }
 
-  private async executeTools(
-    tools: string[],
-    query: string,
+  private async executePlannedTools(
+    steps: Array<{ name: string; arguments: any }>,
+    conversationId: string,
+    userId: string,
   ): Promise<Array<{ tool: string; result: any }>> {
-    const results = [];
-
-    for (const toolName of tools) {
+    const results: Array<{ tool: string; result: any }> = [];
+    for (const step of steps || []) {
       try {
         const context = {
-          userId: 'system',
-          conversationId: 'temp',
+          userId,
+          conversationId,
           messageId: 'temp',
-        }; // TODO: Pass actual user context
-        const result = await this.chatToolsService.executeTool(toolName, query, context);
-        results.push({ tool: toolName, result });
+        };
+        const result = await this.chatToolsService.executeTool(step.name, step.arguments, context);
+        results.push({ tool: step.name, result });
       } catch (error) {
-        this.logger.error(`Tool execution failed: ${toolName}`, error.stack, {
+        this.logger.error(`Planned tool execution failed: ${step.name}`, error.stack, {
           service: 'chat',
-          tool: toolName,
+          tool: step.name,
         });
       }
     }
-
     return results;
   }
 
@@ -223,7 +220,7 @@ export class ChatService {
     customPrompt?: string,
     toolResults?: Array<{ tool: string; result: any }>,
   ): string {
-    let prompt = `You are  , an intelligent sports assistant specializing in football predictions and analysis.
+    let prompt = `You are an intelligent sports assistant specializing in football predictions and analysis.
 
 You help users with:
 - Sports data analysis and insights

@@ -1,8 +1,3 @@
-/*
- *
- * Copyright (c) 2024
- * All rights reserved.
- */
 
 import { InputType, Field, ObjectType } from '@nestjs/graphql';
 import { IsString, IsOptional, IsUUID } from 'class-validator';

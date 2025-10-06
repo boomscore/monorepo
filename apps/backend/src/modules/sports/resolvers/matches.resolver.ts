@@ -1,12 +1,4 @@
-/*
- *
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
-import { GraphQLJSON } from 'graphql-type-json';
-import { UseGuards } from '@nestjs/common';
 import { MatchesService, MatchFilters } from '../services/matches.service';
 import { Public } from '@/modules/auth/decorators/public.decorator';
 import { Match } from '../entities/match.entity';
@@ -68,14 +60,5 @@ export class MatchesResolver {
   @Query(() => [MatchEvent])
   async matchEvents(@Args('matchId') matchId: string) {
     return this.matchesService.getMatchEvents(matchId);
-  }
-
-  // Admin mutations
-  @Mutation(() => Boolean)
-  @Public()
-  async syncLiveMatches(): Promise<boolean> {
-    // This method has been removed from the service
-    // Live match syncing is now handled by SportsSyncService
-    return true;
   }
 }

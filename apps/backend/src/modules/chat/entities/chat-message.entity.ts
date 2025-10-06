@@ -1,9 +1,3 @@
-/*
- * Sports Prediction Platform
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -258,69 +252,7 @@ export class ChatMessage {
     });
   }
 
-  extractEntities(): void {
-    // This would typically use NLP to extract entities
-    // For now, simple regex-based extraction
-    const entities = new Set<string>();
 
-    // Extract team names, match references, etc.
-    const teamRegex =
-      /\b(Arsenal|Chelsea|Liverpool|Manchester United|Manchester City|Tottenham|Barcelona|Real Madrid|Bayern Munich|PSG)\b/gi;
-    const matchRegex = /\b(match|game|fixture)\b/gi;
-
-    const teamMatches = this.content.match(teamRegex);
-    const matchMatches = this.content.match(matchRegex);
-
-    if (teamMatches) {
-      teamMatches.forEach(team => entities.add(team.toLowerCase()));
-    }
-
-    if (matchMatches) {
-      matchMatches.forEach(match => entities.add(match.toLowerCase()));
-    }
-
-    this.entities = Array.from(entities);
-  }
-
-  classifyIntent(): void {
-    const content = this.content.toLowerCase();
-
-    let category = 'general';
-    let confidence = 0.5;
-    const entities: { [key: string]: string } = {};
-
-    // Simple rule-based intent classification
-    if (content.includes('predict') || content.includes('prediction')) {
-      category = 'prediction';
-      confidence = 0.8;
-    } else if (
-      content.includes('match') ||
-      content.includes('game') ||
-      content.includes('fixture')
-    ) {
-      category = 'match_info';
-      confidence = 0.7;
-    } else if (content.includes('team') || content.includes('player')) {
-      category = 'team_info';
-      confidence = 0.6;
-    } else if (
-      content.includes('league') ||
-      content.includes('standings') ||
-      content.includes('table')
-    ) {
-      category = 'league_info';
-      confidence = 0.6;
-    } else if (content.includes('stats') || content.includes('statistics')) {
-      category = 'statistics';
-      confidence = 0.7;
-    }
-
-    this.intent = {
-      category,
-      confidence,
-      entities,
-    };
-  }
 
   analyzeSentiment(): void {
     // Simple sentiment analysis

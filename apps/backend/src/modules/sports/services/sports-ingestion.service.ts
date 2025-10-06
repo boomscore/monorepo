@@ -236,6 +236,7 @@ export class SportsIngestionService {
 
         if (!season) {
           season = this.seasonRepository.create({
+            name: `${apiSeason.year} Season`,
             year: apiSeason.year,
             startDate: new Date(apiSeason.start),
             endDate: new Date(apiSeason.end),

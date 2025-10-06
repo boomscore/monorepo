@@ -22,8 +22,6 @@ export class SportsService {
     this.logger.info('Starting league sync', { service: 'sports' });
 
     try {
-      const footballConfig = SPORT_CONFIGS[SportType.FOOTBALL];
-
       this.logger.info(
         'Fetching leagues from API (trying season filter first for smaller response)',
         {
@@ -94,7 +92,6 @@ export class SportsService {
               updated++;
             } else {
               league = this.leagueRepository.create({
-                sportId: footballConfig.id,
                 apiId,
                 name,
                 slug: this.generateSlug(name, parseInt(apiId)),
