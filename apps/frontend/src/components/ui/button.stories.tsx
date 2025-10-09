@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import React from 'react';
 
+
 import { Button, ButtonArrow } from './button';
 
 const meta: Meta<typeof Button> = {
@@ -105,7 +106,7 @@ export const Mono: Story = {
 
 export const Sizes: Story = {
   render: args => (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+    <div className="flex items-center gap-3">
       <Button {...args} size="sm">
         Small
       </Button>
@@ -164,7 +165,7 @@ export const Disabled: Story = {
 
 export const WithArrow: Story = {
   render: args => (
-    <Button {...args}>
+    <Button {...args} className='flex items-center gap-2 px-4'>
       Explore
       <ButtonArrow />
     </Button>
