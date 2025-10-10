@@ -221,9 +221,7 @@ export class SportsApiService {
     };
 
     if (!this.config.apiKey) {
-      this.logger.warn(
-        'SPORT_API_KEY not configured. Sports data ingestion will be disabled.',
-      );
+      this.logger.warn('SPORT_API_KEY not configured. Sports data ingestion will be disabled.');
     }
 
     this.httpClient = axios.create({
@@ -236,10 +234,8 @@ export class SportsApiService {
     });
 
     this.httpClient.interceptors.request.use(
-      (config) => {
-        this.logger.debug(
-          `API Request: ${config.method?.toUpperCase()} ${config.url}`,
-        );
+      config => {
+        this.logger.debug(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
         return config;
       },
       (error: any) => {
@@ -249,7 +245,7 @@ export class SportsApiService {
     );
 
     this.httpClient.interceptors.response.use(
-      (response) => {
+      response => {
         this.logger.debug(
           `API Response: ${response.status} - ${(response.data as { results?: number })?.results || 0} results`,
         );
@@ -257,8 +253,7 @@ export class SportsApiService {
       },
       (error: any) => {
         this.logger.error('API Response Error:', {
-          status: (error as { response?: { status?: number } }).response
-            ?.status,
+          status: (error as { response?: { status?: number } }).response?.status,
           message: (error as Error).message,
           url: (error as { config?: { url?: string } }).config?.url,
         });
@@ -272,9 +267,9 @@ export class SportsApiService {
       const params: Record<string, string | number> = {};
       if (season) params.season = season;
 
-      const response = await this.httpClient.get<
-        ApiSportsResponse<ApiSportsLeague>
-      >('/leagues', { params });
+      const response = await this.httpClient.get<ApiSportsResponse<ApiSportsLeague>>('/leagues', {
+        params,
+      });
 
       if (response.data.errors.length > 0) {
         this.logger.error('API Errors:', response.data.errors);
@@ -290,21 +285,22 @@ export class SportsApiService {
 
   async getTeams(leagueId: number, season: number): Promise<ApiSportsTeam[]> {
     try {
-      const response = await this.httpClient.get<
-        ApiSportsResponse<{ team: ApiSportsTeam }>
-      >('/teams', {
-        params: {
-          league: leagueId,
-          season: season,
+      const response = await this.httpClient.get<ApiSportsResponse<{ team: ApiSportsTeam }>>(
+        '/teams',
+        {
+          params: {
+            league: leagueId,
+            season: season,
+          },
         },
-      });
+      );
 
       if (response.data.errors.length > 0) {
         this.logger.error('API Errors:', response.data.errors);
         return [];
       }
 
-      return response.data.response.map((item) => item.team);
+      return response.data.response.map(item => item.team);
     } catch (error) {
       this.logger.error('Failed to fetch teams:', error);
       return [];
@@ -326,9 +322,9 @@ export class SportsApiService {
       if (live) params.live = 'all';
       if (fixtureId) params.id = fixtureId;
 
-      const response = await this.httpClient.get<
-        ApiSportsResponse<ApiSportsMatch>
-      >('/fixtures', { params });
+      const response = await this.httpClient.get<ApiSportsResponse<ApiSportsMatch>>('/fixtures', {
+        params,
+      });
 
       if (response.data.errors.length > 0) {
         this.logger.error('API Errors:', response.data.errors);
@@ -343,13 +339,7 @@ export class SportsApiService {
   }
 
   async getFixtureById(fixtureId: number): Promise<ApiSportsMatch | null> {
-    const fixtures = await this.getFixtures(
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      fixtureId,
-    );
+    const fixtures = await this.getFixtures(undefined, undefined, undefined, undefined, fixtureId);
     return fixtures.length > 0 ? fixtures[0] : null;
   }
 
@@ -364,13 +354,14 @@ export class SportsApiService {
 
   async getMatchEvents(fixtureId: number): Promise<ApiSportsEvent[]> {
     try {
-      const response = await this.httpClient.get<
-        ApiSportsResponse<ApiSportsEvent>
-      >('/fixtures/events', {
-        params: {
-          fixture: fixtureId,
+      const response = await this.httpClient.get<ApiSportsResponse<ApiSportsEvent>>(
+        '/fixtures/events',
+        {
+          params: {
+            fixture: fixtureId,
+          },
         },
-      });
+      );
 
       if (response.data.errors.length > 0) {
         this.logger.error('API Errors:', response.data.errors);
@@ -386,14 +377,11 @@ export class SportsApiService {
 
   async getMatchStatistics(fixtureId: number): Promise<any[]> {
     try {
-      const response = await this.httpClient.get<ApiSportsResponse<any>>(
-        '/fixtures/statistics',
-        {
-          params: {
-            fixture: fixtureId,
-          },
+      const response = await this.httpClient.get<ApiSportsResponse<any>>('/fixtures/statistics', {
+        params: {
+          fixture: fixtureId,
         },
-      );
+      });
 
       if (response.data.errors.length > 0) {
         this.logger.error('API Errors:', response.data.errors);
@@ -409,13 +397,14 @@ export class SportsApiService {
 
   async getMatchLineups(fixtureId: number): Promise<ApiSportsLineup[]> {
     try {
-      const response = await this.httpClient.get<
-        ApiSportsResponse<ApiSportsLineup>
-      >('/fixtures/lineups', {
-        params: {
-          fixture: fixtureId,
+      const response = await this.httpClient.get<ApiSportsResponse<ApiSportsLineup>>(
+        '/fixtures/lineups',
+        {
+          params: {
+            fixture: fixtureId,
+          },
         },
-      });
+      );
 
       if (response.data.errors.length > 0) {
         this.logger.error('API Errors (lineups):', response.data.errors);
@@ -440,8 +429,7 @@ export class SportsApiService {
         },
       });
 
-      const response =
-        await basketballClient.get<ApiSportsResponse<any>>('/leagues');
+      const response = await basketballClient.get<ApiSportsResponse<any>>('/leagues');
 
       if (response.data.errors.length > 0) {
         this.logger.error('Basketball API Errors:', response.data.errors);
@@ -455,11 +443,7 @@ export class SportsApiService {
     }
   }
 
-  async getBasketballGames(
-    leagueId?: number,
-    season?: number,
-    live?: boolean,
-  ): Promise<any[]> {
+  async getBasketballGames(leagueId?: number, season?: number, live?: boolean): Promise<any[]> {
     try {
       const basketballClient = axios.create({
         baseURL: 'https://v1.basketball.api-sports.io',
@@ -475,10 +459,7 @@ export class SportsApiService {
       if (season) params.season = season;
       if (live) params.live = 'all';
 
-      const response = await basketballClient.get<ApiSportsResponse<unknown>>(
-        '/games',
-        { params },
-      );
+      const response = await basketballClient.get<ApiSportsResponse<unknown>>('/games', { params });
 
       if (response.data.errors.length > 0) {
         this.logger.error('Basketball API Errors:', response.data.errors);
@@ -506,9 +487,9 @@ export class SportsApiService {
         fixture: fixtureId,
       };
 
-      const response = await this.httpClient.get<
-        ApiSportsResponse<ApiSportsOdds>
-      >('/odds', { params });
+      const response = await this.httpClient.get<ApiSportsResponse<ApiSportsOdds>>('/odds', {
+        params,
+      });
 
       if (response.data.errors.length > 0) {
         this.logger.error('Odds API Errors:', response.data.errors);
@@ -517,17 +498,12 @@ export class SportsApiService {
 
       return response.data.response;
     } catch (error) {
-      this.logger.error(
-        `Failed to fetch odds for fixture ${fixtureId}:`,
-        error,
-      );
+      this.logger.error(`Failed to fetch odds for fixture ${fixtureId}:`, error);
       return Promise.reject(new Error(String(error)));
     }
   }
 
-  async getBulkMatchOdds(
-    fixtureIds: number[],
-  ): Promise<Record<number, ApiSportsOdds[]>> {
+  async getBulkMatchOdds(fixtureIds: number[]): Promise<Record<number, ApiSportsOdds[]>> {
     if (!this.isConfigured()) {
       throw new Error('Sports API is not configured');
     }
@@ -538,15 +514,12 @@ export class SportsApiService {
     for (let i = 0; i < fixtureIds.length; i += batchSize) {
       const batch = fixtureIds.slice(i, i + batchSize);
 
-      const batchPromises = batch.map(async (fixtureId) => {
+      const batchPromises = batch.map(async fixtureId => {
         try {
           const odds = await this.getMatchOdds(fixtureId);
           return { fixtureId, odds };
         } catch (error) {
-          this.logger.warn(
-            `Failed to fetch odds for fixture ${fixtureId}:`,
-            error,
-          );
+          this.logger.warn(`Failed to fetch odds for fixture ${fixtureId}:`, error);
           return { fixtureId, odds: [] };
         }
       });
@@ -558,7 +531,7 @@ export class SportsApiService {
       }
 
       if (i + batchSize < fixtureIds.length) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
 
@@ -575,9 +548,9 @@ export class SportsApiService {
         fixture: fixtureId,
       };
 
-      const response = await this.httpClient.get<
-        ApiSportsResponse<ApiSportsOdds>
-      >('/odds', { params });
+      const response = await this.httpClient.get<ApiSportsResponse<ApiSportsOdds>>('/odds', {
+        params,
+      });
 
       if (response.data.errors.length > 0) {
         this.logger.error('Basketball Odds API Errors:', response.data.errors);
@@ -586,17 +559,12 @@ export class SportsApiService {
 
       return response.data.response;
     } catch (error) {
-      this.logger.error(
-        `Failed to fetch basketball odds for fixture ${fixtureId}:`,
-        error,
-      );
+      this.logger.error(`Failed to fetch basketball odds for fixture ${fixtureId}:`, error);
       return [];
     }
   }
 
-  async getBasketballTeamStats(
-    fixtureId: number,
-  ): Promise<Record<string, number>> {
+  async getBasketballTeamStats(fixtureId: number): Promise<Record<string, number>> {
     if (!this.isConfigured()) {
       throw new Error('Sports API is not configured');
     }
@@ -606,9 +574,9 @@ export class SportsApiService {
         id: fixtureId,
       };
 
-      const response = await this.httpClient.get<
-        ApiSportsResponse<ApiSportsFixture>
-      >('/fixtures', { params });
+      const response = await this.httpClient.get<ApiSportsResponse<ApiSportsFixture>>('/fixtures', {
+        params,
+      });
 
       if (response.data.errors.length > 0) {
         this.logger.error('Basketball Stats API Errors:', response.data.errors);
@@ -633,10 +601,7 @@ export class SportsApiService {
         awayNetRating: 5, // Offensive - Defensive rating
       };
     } catch (error) {
-      this.logger.error(
-        `Failed to fetch basketball stats for fixture ${fixtureId}:`,
-        error,
-      );
+      this.logger.error(`Failed to fetch basketball stats for fixture ${fixtureId}:`, error);
       return {};
     }
   }
@@ -646,16 +611,14 @@ export class SportsApiService {
     return this.getFixtures(undefined, undefined, today);
   }
 
-  async getStandings(
-    leagueId: number,
-    season: number,
-  ): Promise<ApiSportsStandingsLeague | null> {
+  async getStandings(leagueId: number, season: number): Promise<ApiSportsStandingsLeague | null> {
     try {
-      const response = await this.httpClient.get<
-        ApiSportsResponse<ApiSportsStandingsLeague>
-      >('/standings', {
-        params: { league: leagueId, season },
-      });
+      const response = await this.httpClient.get<ApiSportsResponse<ApiSportsStandingsLeague>>(
+        '/standings',
+        {
+          params: { league: leagueId, season },
+        },
+      );
 
       if (response.data.errors.length > 0) {
         this.logger.error('Standings API Errors:', response.data.errors);
@@ -669,18 +632,16 @@ export class SportsApiService {
     }
   }
 
-  async getHeadToHead(
-    team1Id: number,
-    team2Id: number,
-  ): Promise<ApiSportsMatch[]> {
+  async getHeadToHead(team1Id: number, team2Id: number): Promise<ApiSportsMatch[]> {
     try {
-      const response = await this.httpClient.get<
-        ApiSportsResponse<ApiSportsMatch>
-      >('/fixtures/headtohead', {
-        params: {
-          h2h: `${team1Id}-${team2Id}`,
+      const response = await this.httpClient.get<ApiSportsResponse<ApiSportsMatch>>(
+        '/fixtures/headtohead',
+        {
+          params: {
+            h2h: `${team1Id}-${team2Id}`,
+          },
         },
-      });
+      );
 
       if (response.data.errors.length > 0) {
         this.logger.error('H2H API Errors:', response.data.errors);
@@ -694,22 +655,15 @@ export class SportsApiService {
     }
   }
 
-  async getTeamStatistics(
-    teamId: number,
-    leagueId: number,
-    season: number,
-  ): Promise<any> {
+  async getTeamStatistics(teamId: number, leagueId: number, season: number): Promise<any> {
     try {
-      const response = await this.httpClient.get<ApiSportsResponse<any>>(
-        '/teams/statistics',
-        {
-          params: {
-            team: teamId,
-            league: leagueId,
-            season: season,
-          },
+      const response = await this.httpClient.get<ApiSportsResponse<any>>('/teams/statistics', {
+        params: {
+          team: teamId,
+          league: leagueId,
+          season: season,
         },
-      );
+      });
 
       if (response.data.errors.length > 0) {
         this.logger.error('Team Stats API Errors:', response.data.errors);
@@ -723,14 +677,9 @@ export class SportsApiService {
     }
   }
 
-  async getTeamRecentFixtures(
-    teamId: number,
-    last: number = 10,
-  ): Promise<ApiSportsMatch[]> {
+  async getTeamRecentFixtures(teamId: number, last: number = 10): Promise<ApiSportsMatch[]> {
     try {
-      const response = await this.httpClient.get<
-        ApiSportsResponse<ApiSportsMatch>
-      >('/fixtures', {
+      const response = await this.httpClient.get<ApiSportsResponse<ApiSportsMatch>>('/fixtures', {
         params: {
           team: teamId,
           last: last,
@@ -755,10 +704,7 @@ export class SportsApiService {
       if (fixtureId) params.fixture = fixtureId;
       if (teamId) params.team = teamId;
 
-      const response = await this.httpClient.get<ApiSportsResponse<any>>(
-        '/injuries',
-        { params },
-      );
+      const response = await this.httpClient.get<ApiSportsResponse<any>>('/injuries', { params });
 
       if (response.data.errors.length > 0) {
         this.logger.error('Injuries API Errors:', response.data.errors);

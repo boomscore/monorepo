@@ -9,9 +9,12 @@
   ],
   "scripts": {
     "dev": "pnpm --filter backend dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:both": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
     "dev:local": "docker-compose up -d postgres redis && sleep 5 && pnpm --filter backend dev",
     "build": "pnpm -r build",
     "start": "docker-compose up -d && sleep 10 && pnpm --filter backend dev",
+    "start:frontend": "pnpm --filter frontend start",
     "start:local": "docker-compose up -d postgres redis && sleep 5 && pnpm --filter backend dev",
     "start:prod": "pnpm --filter backend start:prod",
     "test": "pnpm -r test",
@@ -30,11 +33,13 @@
     "docker:logs": "docker-compose logs -f",
     "docker:build": "docker-compose build",
     "prepare": "husky install",
-    "storybook": "pnpm --filter frontend storybook"
+    "storybook": "pnpm --filter frontend storybook",
+    "codegen": "pnpm --filter frontend codegen"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.13.0",
     "@typescript-eslint/parser": "^7.13.0",
+    "concurrently": "^9.2.1",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
