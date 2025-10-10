@@ -17,18 +17,21 @@ const meta: Meta<typeof Card> = {
   component: Card,
   tags: ['autodocs'],
   argTypes: {
-    className: { control: 'text' },
+    className: { control: 'text', description: 'Custom CSS class for Card' },
     variant: {
       control: { type: 'radio' },
       options: ['primary', 'outline'],
+      description: 'Card visual style',
     },
     padding: {
       control: { type: 'radio' },
       options: ['sm', 'md', 'lg'],
+      description: 'Card padding size',
     },
     gap: {
       control: { type: 'radio' },
       options: ['sm', 'md', 'lg', 'xl'],
+      description: 'Gap between Card sections',
     },
   },
   args: {
@@ -36,12 +39,52 @@ const meta: Meta<typeof Card> = {
     padding: 'md',
     gap: 'lg',
   },
+  parameters: {
+    docs: {
+      description: {
+        component: `A reusable Card component for layouts and UI grouping.
+
+### Usage
+
+\`\`\`tsx
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardAction,
+  CardFooter,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
+<Card variant="primary" padding="md" gap="lg">
+  <CardHeader>
+    <CardTitle>Card title</CardTitle>
+    <CardDescription>Short description.</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p>Card content goes here.</p>
+  </CardContent>
+  <CardFooter>
+    <Button>Save</Button>
+    <Button variant="outline">Cancel</Button>
+  </CardFooter>
+</Card>
+\`\`\`
+
+See stories below for more complex usage, including grouped header, footer actions, and content layouts.
+        `,
+      },
+    },
+  },
 };
 
 export default meta;
 
 type Story = StoryObj<typeof Card>;
 
+/** Default layout with header, content, and footer */
 export const Default: Story = {
   render: args => (
     <Card {...args} className="max-w-md">
@@ -69,11 +112,19 @@ export const Default: Story = {
       </CardFooter>
     </Card>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Default card with header, content, and footer actions.',
+      },
+    },
+  },
 };
 
+/** Card with action button in the header */
 export const WithAction: Story = {
   render: args => (
-    <Card {...args} style={{ width: 540 }}>
+    <Card {...args} className="max-w-lg">
       <CardHeader>
         <div>
           <CardTitle>Project Updates</CardTitle>
@@ -92,17 +143,24 @@ export const WithAction: Story = {
       </CardContent>
     </Card>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Card with header action and list-style content.',
+      },
+    },
+  },
 };
 
+/** Card with only a header */
 export const HeaderOnly: Story = {
   args: {
     variant: 'outline',
     padding: 'lg',
     className: 'Hello',
   },
-
   render: args => (
-    <Card {...args} style={{ width: 420 }}>
+    <Card {...args} className="max-w-md">
       <CardHeader>
         <div>
           <CardTitle>Only header</CardTitle>
@@ -111,8 +169,16 @@ export const HeaderOnly: Story = {
       </CardHeader>
     </Card>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Card with only header section.',
+      },
+    },
+  },
 };
 
+/** Card with footer actions */
 export const WithFooter: Story = {
   render: args => (
     <Card {...args} className="max-w-md">
@@ -129,11 +195,19 @@ export const WithFooter: Story = {
       </CardFooter>
     </Card>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Card with content and footer actions.',
+      },
+    },
+  },
 };
 
+/** Complex card layout with header, content grid, action and footer */
 export const Complex: Story = {
   render: args => (
-    <Card {...args} style={{ width: 640 }}>
+    <Card {...args} className="max-w-xl">
       <CardHeader>
         <div>
           <CardTitle>Complex card</CardTitle>
@@ -170,4 +244,11 @@ export const Complex: Story = {
       </CardFooter>
     </Card>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Complex card layout combining all sections.',
+      },
+    },
+  },
 };
