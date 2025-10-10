@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import React from 'react';
 
 
-import { Button, ButtonArrow } from './button';
+import { Button, ButtonArrow } from '../button';
 
 const meta: Meta<typeof Button> = {
   title: 'Components/ui/Button',
@@ -172,5 +172,27 @@ export const WithArrow: Story = {
   ),
   args: {
     variant: 'primary',
+  },
+};
+
+
+export const Variants: Story = {
+  render: args => (
+    <div className="flex flex-col items-center justify-center gap-2">
+      <Button {...args} variant="primary">Primary</Button>
+      <Button {...args} variant="secondary">Secondary</Button>
+      <Button {...args} variant="ghost">Ghost</Button>
+      <Button {...args} variant="outline">Outline</Button>
+      <Button {...args} variant="destructive">Destructive</Button>
+      <Button {...args} variant="mono">Mono</Button>
+      <Button {...args} variant="dashed">Dashed</Button>
+      <Button {...args} variant="dim">Dim</Button>
+      <Button {...args} variant="foreground">Foreground</Button>
+      <Button {...args} variant="inverse">Inverse</Button>
+    </div>
+  ),
+  args: {
+    children: 'Button',
+    size: 'md',
   },
 };

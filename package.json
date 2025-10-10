@@ -29,7 +29,8 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "docker:build": "docker-compose build",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "storybook": "pnpm --filter frontend storybook"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.13.0",
