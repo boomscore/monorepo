@@ -1,7 +1,17 @@
-import React from 'react'
+import Image from 'next/image';
+import React from 'react';
+import { Button } from './ui';
+import Link from 'next/link';
 
 export const Navbar = () => {
   return (
-    <div>Navbar</div>
-  )
-}
+    <div className="h-16 border-b border-[#F2F2F2] flex items-center justify-between px-4">
+      <Image src="/logo.svg" alt="logo" width={100} height={100} />
+      <div className="flex items-center gap-4">
+        <Button className="bg-green-600" asChild>
+          <Link href="/fixtures">Fixtures</Link>
+        </Button>
+      </div>
+    </div>
+  );
+};
