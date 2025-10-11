@@ -1,6 +1,5 @@
 import { gql } from '@apollo/client';
 
-// User-related queries
 export const GET_ME = gql`
   query GetMe {
     me {
@@ -24,7 +23,6 @@ export const GET_ME = gql`
   }
 `;
 
-// Sports-related queries
 export const GET_LEAGUES = gql`
   query GetLeagues($sportId: String, $country: String, $isActive: Boolean) {
     leagues(sportId: $sportId, country: $country, isActive: $isActive) {
