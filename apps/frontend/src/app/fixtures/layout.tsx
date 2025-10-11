@@ -37,7 +37,7 @@ export default function FixturesLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="flex h-[calc(100vh-64px)]">
-      <div className="max-w-[600px] w-full h-full overflow-y-auto">{children}</div>
+      <div className="max-w-[600px] w-full h-full overflow-y-auto scrollable">{children}</div>
 
       <div className="border-l border-[#F2F2F2] flex-1 p-1">
         <div className="flex flex-col h-full bg-[#FAFAFA] rounded-2xl">
