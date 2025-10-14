@@ -4,7 +4,13 @@ import React, { useState } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { useMobile } from '@/lib/utils/use-mobile';
 import { Button, Chat } from '@/components';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui';
+import { AuthWrapper } from '@/components/auth/auth-wrapper';
+
+
+
+// graphQl
+
 
 export default function FixturesLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useMobile();
@@ -39,10 +45,13 @@ export default function FixturesLayout({ children }: { children: React.ReactNode
     <div className="flex h-[calc(100vh-64px)]">
       <div className="max-w-[600px] w-full h-full overflow-y-auto scrollable">{children}</div>
 
-      <div className="border-l border-[#F2F2F2] flex-1 p-1">
-        <div className="flex flex-col h-full bg-[#FAFAFA] rounded-2xl">
+      <div className="border-l border-border flex-1 p-1">
+        <div className="flex flex-col h-full bg-app-background rounded-2xl">
           <div className="flex-1">
             <Chat />
+            {/* <div className="max-w-sm m-auto h-full flex items-center  w-full">
+              <AuthWrapper />
+            </div> */}
           </div>
         </div>
       </div>

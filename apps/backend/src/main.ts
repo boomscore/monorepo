@@ -32,10 +32,22 @@ async function bootstrap() {
     app.use(cookieParser());
 
     app.enableCors({
-      origin: configService.get<string[]>('CORS_ORIGINS', [
-        'http://localhost:3000',
-        'http://localhost:3001',
-      ]),
+      origin: (origin, callback) => {
+        const allowedOrigins = configService.get<string[]>('CORS_ORIGINS', [
+          'http://localhost:3000',
+          'http://localhost:3001', 
+          'http://localhost:3002',
+        ]);
+        
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        } else {
+          return callback(new Error('Not allowed by CORS'), false);
+        }
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Forwarded-For'],

@@ -5,10 +5,10 @@ import Link from 'next/link';
 
 export const Navbar = () => {
   return (
-    <div className="h-16 border-b border-[#F2F2F2] flex items-center justify-between px-4">
+    <div className="h-16 border-b border-border flex items-center justify-between px-4">
       <Image src="/logo.svg" alt="logo" width={100} height={100} />
       <div className="flex items-center gap-4">
-        <Button className="bg-green-600" asChild>
+        <Button asChild>
           <Link href="/fixtures">Fixtures</Link>
         </Button>
       </div>

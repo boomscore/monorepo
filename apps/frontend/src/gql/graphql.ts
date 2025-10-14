@@ -1138,6 +1138,24 @@ export type GetTodaysMatchesQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetTodaysMatchesQuery = { __typename?: 'Query', todaysMatches: Array<{ __typename?: 'Match', id: string, startTime: any, status: MatchStatus, shortStatus: string, hasStarted: boolean, isFinished: boolean, isLive: boolean, homeScore?: number | null, awayScore?: number | null, displayScore: string, timeUntilStart: number, homeTeam: { __typename?: 'Team', id: string, name: string, displayName: string, logo?: string | null }, awayTeam: { __typename?: 'Team', id: string, name: string, displayName: string, logo?: string | null }, league: { __typename?: 'League', id: string, name: string, displayName: string, logo?: string | null } }> };
 
+export type GetFixturesQueryVariables = Exact<{
+  date?: InputMaybe<Scalars['String']['input']>;
+  isLive?: InputMaybe<Scalars['Boolean']['input']>;
+  isToday?: InputMaybe<Scalars['Boolean']['input']>;
+  leagueId?: InputMaybe<Scalars['String']['input']>;
+  teamId?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Float']['input']>;
+  offset?: InputMaybe<Scalars['Float']['input']>;
+}>;
+
+
+export type GetFixturesQuery = { __typename?: 'Query', matches: Array<{ __typename?: 'Match', id: string, awayScore?: number | null, awayPenaltyScore?: number | null, awayHalfTimeScore?: number | null, awayExtraTimeScore?: number | null, finishedAt?: any | null, hasStarted: boolean, homeExtraTimeScore?: number | null, homeHalfTimeScore?: number | null, homePenaltyScore?: number | null, homeScore?: number | null, isLive: boolean, isFinished: boolean, minute?: number | null, status: MatchStatus, startTime: any, timeUntilStart: number, result: MatchResult, homeTeam: { __typename?: 'Team', name: string, logo?: string | null, id: string }, awayTeam: { __typename?: 'Team', name: string, logo?: string | null, id: string }, league: { __typename?: 'League', id: string, name: string, displayName: string, logo?: string | null, country: string } }> };
+
+export type GetLiveFixturesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetLiveFixturesQuery = { __typename?: 'Query', liveMatches: Array<{ __typename?: 'Match', id: string, awayScore?: number | null, awayPenaltyScore?: number | null, awayHalfTimeScore?: number | null, awayExtraTimeScore?: number | null, finishedAt?: any | null, hasStarted: boolean, homeExtraTimeScore?: number | null, homeHalfTimeScore?: number | null, homePenaltyScore?: number | null, homeScore?: number | null, isLive: boolean, isFinished: boolean, minute?: number | null, status: MatchStatus, startTime: any, timeUntilStart: number, result: MatchResult, homeTeam: { __typename?: 'Team', name: string, logo?: string | null, id: string }, awayTeam: { __typename?: 'Team', name: string, logo?: string | null, id: string }, league: { __typename?: 'League', id: string, name: string, displayName: string, logo?: string | null, country: string } }> };
+
 export class TypedDocumentString<TResult, TVariables>
   extends String
   implements DocumentTypeDecoration<TResult, TVariables>
@@ -1473,3 +1491,93 @@ export const GetTodaysMatchesDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<GetTodaysMatchesQuery, GetTodaysMatchesQueryVariables>;
+export const GetFixturesDocument = new TypedDocumentString(`
+    query GetFixtures($date: String, $isLive: Boolean, $isToday: Boolean, $leagueId: String, $teamId: String, $limit: Float, $offset: Float) {
+  matches(
+    date: $date
+    isLive: $isLive
+    isToday: $isToday
+    leagueId: $leagueId
+    teamId: $teamId
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    homeTeam {
+      name
+      logo
+      id
+    }
+    awayTeam {
+      name
+      logo
+      id
+    }
+    awayScore
+    awayPenaltyScore
+    awayHalfTimeScore
+    awayExtraTimeScore
+    finishedAt
+    hasStarted
+    homeExtraTimeScore
+    homeHalfTimeScore
+    homePenaltyScore
+    homeScore
+    isLive
+    isFinished
+    minute
+    status
+    startTime
+    league {
+      id
+      name
+      displayName
+      logo
+      country
+    }
+    timeUntilStart
+    result
+  }
+}
+    `) as unknown as TypedDocumentString<GetFixturesQuery, GetFixturesQueryVariables>;
+export const GetLiveFixturesDocument = new TypedDocumentString(`
+    query GetLiveFixtures {
+  liveMatches {
+    id
+    homeTeam {
+      name
+      logo
+      id
+    }
+    awayTeam {
+      name
+      logo
+      id
+    }
+    awayScore
+    awayPenaltyScore
+    awayHalfTimeScore
+    awayExtraTimeScore
+    finishedAt
+    hasStarted
+    homeExtraTimeScore
+    homeHalfTimeScore
+    homePenaltyScore
+    homeScore
+    isLive
+    isFinished
+    minute
+    status
+    startTime
+    league {
+      id
+      name
+      displayName
+      logo
+      country
+    }
+    timeUntilStart
+    result
+  }
+}
+    `) as unknown as TypedDocumentString<GetLiveFixturesQuery, GetLiveFixturesQueryVariables>;

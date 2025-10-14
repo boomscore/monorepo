@@ -18,3 +18,4 @@ export * from './separator';
 export * from './select';
 export * from './skeleton';
 export * from './sonner';
+export * from './sheet';

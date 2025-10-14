@@ -22,8 +22,8 @@ export class MatchesResolver {
     if (date) filters.date = date;
     if (leagueId) filters.leagueId = leagueId;
     if (teamId) filters.teamId = teamId;
-    if (isLive) filters.isLive = isLive;
-    if (isToday) filters.isToday = isToday;
+    if (isLive !== undefined) filters.isLive = isLive;
+    if (isToday !== undefined) filters.isToday = isToday;
     if (limit) filters.limit = limit;
     if (offset) filters.offset = offset;
 

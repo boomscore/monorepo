@@ -121,7 +121,7 @@ export const validationSchema = Joi.object({
   LOG_LEVEL: Joi.string().valid('error', 'warn', 'info', 'debug').default('info'),
 
   // CORS
-  CORS_ORIGINS: Joi.string().default('http://localhost:3000,http://localhost:3001'),
+  CORS_ORIGINS: Joi.string().default('http://localhost:3000,http://localhost:3001,http://localhost:3002'),
 });
 
 export default (): Configuration => ({
@@ -174,7 +174,7 @@ export default (): Configuration => ({
   TRACING_ENABLED: process.env.TRACING_ENABLED !== 'false',
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
 
-  CORS_ORIGINS: (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:3001').split(
+  CORS_ORIGINS: (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:3001,http://localhost:3002').split(
     ',',
   ),
 });

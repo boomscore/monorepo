@@ -178,3 +178,104 @@ export const GET_TODAYS_MATCHES = gql`
     }
   }
 `;
+
+// Enhanced matches query with all required fields for fixtures
+export const GET_FIXTURES = gql`
+  query GetFixtures(
+    $date: String
+    $isLive: Boolean
+    $isToday: Boolean
+    $leagueId: String
+    $teamId: String
+    $limit: Float
+    $offset: Float
+  ) {
+    matches(
+      date: $date
+      isLive: $isLive
+      isToday: $isToday
+      leagueId: $leagueId
+      teamId: $teamId
+      limit: $limit
+      offset: $offset
+    ) {
+      id
+      homeTeam {
+        name
+        logo
+        id
+      }
+      awayTeam {
+        name
+        logo
+        id
+      }
+      awayScore
+      awayPenaltyScore
+      awayHalfTimeScore
+      awayExtraTimeScore
+      finishedAt
+      hasStarted
+      homeExtraTimeScore
+      homeHalfTimeScore
+      homePenaltyScore
+      homeScore
+      isLive
+      isFinished
+      minute
+      status
+      startTime
+      league {
+        id
+        name
+        displayName
+        logo
+        country
+      }
+      timeUntilStart
+      result
+    }
+  }
+`;
+
+export const GET_LIVE_FIXTURES = gql`
+  query GetLiveFixtures {
+    liveMatches {
+      id
+      homeTeam {
+        name
+        logo
+        id
+      }
+      awayTeam {
+        name
+        logo
+        id
+      }
+      awayScore
+      awayPenaltyScore
+      awayHalfTimeScore
+      awayExtraTimeScore
+      finishedAt
+      hasStarted
+      homeExtraTimeScore
+      homeHalfTimeScore
+      homePenaltyScore
+      homeScore
+      isLive
+      isFinished
+      minute
+      status
+      startTime
+      league {
+        id
+        name
+        displayName
+        logo
+        country
+      }
+      timeUntilStart
+      result
+    }
+  }
+`;
