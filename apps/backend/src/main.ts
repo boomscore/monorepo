@@ -33,18 +33,31 @@ async function bootstrap() {
 
     app.enableCors({
       origin: (origin, callback) => {
-        const allowedOrigins = configService.get<string[]>('CORS_ORIGINS', [
-          'http://localhost:3000',
-          'http://localhost:3001', 
-          'http://localhost:3002',
-        ]);
-        
+        const corsOrigins =
+          configService.get<string>('CORS_ORIGINS') ||
+          'http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:4000';
+        const allowedOrigins = corsOrigins.split(',').map(origin => origin.trim());
+
+        const serverPort = configService.get<number>('PORT', 4000);
+        const playgroundOrigin = `http://localhost:${serverPort}`;
+        if (!allowedOrigins.includes(playgroundOrigin)) {
+          allowedOrigins.push(playgroundOrigin);
+        }
+
+        const apolloStudio = 'https://studio.apollographql.com';
+        if (!allowedOrigins.includes(apolloStudio)) {
+          allowedOrigins.push(apolloStudio);
+        }
+
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
-        
+
         if (allowedOrigins.includes(origin)) {
           return callback(null, true);
         } else {
+          logger.warn(
+            `CORS: Origin not allowed: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`,
+          );
           return callback(new Error('Not allowed by CORS'), false);
         }
       },
@@ -72,32 +85,24 @@ async function bootstrap() {
     // Graceful shutdown
     app.enableShutdownHooks();
 
-    // Initialize sports data automatically (core application functionality)
-    if (configService.get<boolean>('SPORTS_INIT_ON_START', true)) {
-      try {
-        logger.log('MAIN: Starting sports data initialization...');
-        const sportsSyncService = app.get(SportsSyncService);
-        logger.log('MAIN: Got SportsSyncService, calling initializeIfNeeded...');
-        await sportsSyncService.initializeIfNeeded();
-        logger.log('Sports data initialization complete');
-      } catch (error: unknown) {
-        logger.warn(
-          'Sports data initialization failed:',
-          (error instanceof Error ? error.message : String(error)) as any,
-        );
-        // Don't fail the entire app startup for sports data issues
-      }
-    } else {
-      logger.log('SPORTS_INIT_ON_START is disabled');
-    }
-
     const port = configService.get<number>('PORT', 4000);
-    await app.listen(port, '0.0.0.0');
+    logger.log('About to start server on port ' + port);
+
+    await app.listen(port);
 
     Logger.log(`Application is running on: http://localhost:${port}`, 'Bootstrap');
     Logger.log(`GraphQL endpoint: http://localhost:${port}/graphql`, 'Bootstrap');
     Logger.log(`Health check: http://localhost:${port}/health`, 'Bootstrap');
     Logger.log(`Metrics endpoint: http://localhost:${port}/metrics`, 'Bootstrap');
+    const sportsSyncService = app.get(SportsSyncService);
+    setImmediate(async () => {
+      try {
+        await sportsSyncService.initializeIfNeeded();
+        logger.log('MAIN: Sports data initialization complete');
+      } catch (error) {
+        logger.error('MAIN: Sports data initialization failed', error);
+      }
+    });
   } catch (error) {
     Logger.error('Failed to start application', error);
     process.exit(1);

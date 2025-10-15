@@ -26,22 +26,36 @@ interface ServiceStatus {
 
 @Injectable()
 export class HealthService {
-  private readonly redis: Redis;
+  private readonly redis: Redis | null;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly logger: LoggerService,
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {
-    // Initialize Redis connection
-    this.redis = new Redis({
-      host: this.configService.get('REDIS_HOST', 'localhost'),
-      port: this.configService.get('REDIS_PORT', 6379),
-      password: this.configService.get('REDIS_PASSWORD'),
-      db: this.configService.get('REDIS_DB', 0),
-      lazyConnect: true,
-      maxRetriesPerRequest: 3,
-    });
+    // Initialize Redis connection with error handling
+    try {
+      this.redis = new Redis({
+        host: this.configService.get('REDIS_HOST', 'localhost'),
+        port: this.configService.get('REDIS_PORT', 6379),
+        password: this.configService.get('REDIS_PASSWORD') || undefined,
+        db: this.configService.get('REDIS_DB', 0),
+        lazyConnect: false,
+        maxRetriesPerRequest: 3,
+        connectTimeout: 5000,
+        enableOfflineQueue: true,
+      });
+
+      // Handle Redis connection errors gracefully
+      this.redis.on('error', err => {
+        this.logger.warn('Redis connection error in health service', { error: err.message });
+      });
+    } catch (error) {
+      this.logger.warn('Failed to initialize Redis connection in health service', {
+        error: error.message,
+      });
+      this.redis = null;
+    }
   }
 
   async check(): Promise<HealthCheck> {
@@ -87,9 +101,10 @@ export class HealthService {
 
   async checkReadiness(): Promise<boolean> {
     try {
-      const [dbStatus, redisStatus] = await Promise.all([this.checkDatabase(), this.checkRedis()]);
+      const [dbStatus] = await Promise.all([this.checkDatabase()]);
 
-      return dbStatus.status === 'up' && redisStatus.status === 'up';
+      // Only require database to be up for readiness, Redis is optional
+      return dbStatus.status === 'up';
     } catch (error) {
       this.logger.error('Readiness check failed', error.stack, {
         service: 'health',
@@ -140,6 +155,14 @@ export class HealthService {
     const startTime = Date.now();
 
     try {
+      if (!this.redis) {
+        return {
+          status: 'down',
+          message: 'Redis connection not initialized',
+          responseTime: Date.now() - startTime,
+        };
+      }
+
       const result = await this.redis.ping();
       const responseTime = Date.now() - startTime;
 
@@ -159,7 +182,8 @@ export class HealthService {
     } catch (error) {
       const responseTime = Date.now() - startTime;
 
-      this.logger.error('Redis health check failed', error.stack, {
+      this.logger.warn('Redis health check failed', {
+        error: error.message,
         service: 'health',
         check: 'redis',
         responseTime,

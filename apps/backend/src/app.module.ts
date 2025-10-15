@@ -29,7 +29,6 @@ import { PaymentsModule } from '@/modules/payments/payments.module';
 
 @Module({
   imports: [
-    // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
@@ -40,26 +39,20 @@ import { PaymentsModule } from '@/modules/payments/payments.module';
       },
     }),
 
-    // Database
     TypeOrmModule.forRootAsync({
       useClass: DatabaseConfigService,
     }),
 
-    // Redis - using simple ioredis connection
-    // The Redis connection will be provided in individual modules as needed
-
-    // GraphQL
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       useFactory: (configService: ConfigService) => ({
         driver: ApolloDriver,
         autoSchemaFile: join(process.cwd(), 'schema.gql'),
         sortSchema: true,
+        introspection: configService.get('NODE_ENV') === 'development',
         playground: false,
-        introspection: true,
         context: ({ req, res }) => ({ req, res }),
         formatError: error => {
-          // Log GraphQL errors while sanitizing sensitive information
           const { message, locations, path, extensions } = error;
           return {
             message,
@@ -71,9 +64,15 @@ import { PaymentsModule } from '@/modules/payments/payments.module';
             },
           };
         },
-        plugins: (configService.get('NODE_ENV') === 'development'
-          ? [ApolloServerPluginLandingPageLocalDefault({ embed: true })]
-          : []) as any,
+        plugins:
+          configService.get('NODE_ENV') === 'development'
+            ? [
+                ApolloServerPluginLandingPageLocalDefault({
+                  embed: true,
+                  includeCookies: true,
+                }),
+              ]
+            : [],
       }),
       inject: [ConfigService],
     }),
