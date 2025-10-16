@@ -1,4 +1,3 @@
-
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Injectable } from '@nestjs/common';
@@ -58,7 +57,7 @@ export class DatabaseConfigService implements TypeOrmOptionsFactory {
       database: this.configService.get<string>('DATABASE_NAME'),
       ssl: this.configService.get<boolean>('DATABASE_SSL') ? { rejectUnauthorized: false } : false,
       entities,
-      synchronize: false, // Synchronization is broken - use migrations instead
+      synchronize: shouldSync, // Enable sync for development
       logging: this.configService.get<boolean>('DATABASE_LOGGING'),
       migrations: ['dist/database/migrations/*.js'],
       migrationsRun: false, // Don't auto-run to avoid race conditions
