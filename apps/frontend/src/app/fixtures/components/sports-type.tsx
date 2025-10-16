@@ -2,8 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger} from '@/components/ui';
 import { SportType } from '@/constants';
+
 
 const sportsTypeData = [
   { name: SportType.FOOTBALL, slug: 'football' },
@@ -15,7 +16,7 @@ const sportsTypeData = [
 
 export const SportsTypeTabs = () => {
   const defaultSport = sportsTypeData[0].slug;
-
+ 
   return (
     <div className="w-full overflow-x-auto no-scrollbar">
       <Tabs defaultValue={defaultSport}>
