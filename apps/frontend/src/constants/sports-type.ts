@@ -1,0 +1,7 @@
+export const SportType = {
+  FOOTBALL: "⚽FOOTBALL",
+  BASKETBALL: "🏀BASKETBALL",
+  BASEBALL: "⚾BASEBALL",
+  VOLLEYBALL: "🏐VOLLEYBALL",
+  TENNIS: "🎾TENNIS",
+} as const;
