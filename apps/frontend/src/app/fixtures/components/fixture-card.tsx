@@ -1,123 +1,188 @@
 import React from 'react';
 import Image from 'next/image';
-import { Match } from '../types';
+import { cn } from '@/lib/utils';
+import type { GetGroupedFixturesQuery } from '@/gql/graphql';
+import { MatchStatus } from '@/gql/graphql';
+
+type Match = GetGroupedFixturesQuery['matchesGroupedByLeague']['groups'][0]['matches'][0];
 
 interface FixtureCardProps {
   match: Match;
 }
 
 export const FixtureCard: React.FC<FixtureCardProps> = ({ match }) => {
+  const homeTeam = match.homeTeam;
+  const awayTeam = match.awayTeam;
+  const homeScore = match.homeScore ?? null;
+  const awayScore = match.awayScore ?? null;
+  const homePenaltyScore = match.homePenaltyScore ?? null;
+  const awayPenaltyScore = match.awayPenaltyScore ?? null;
+  const homeExtraTimeScore = match.homeExtraTimeScore ?? null;
+  const awayExtraTimeScore = match.awayExtraTimeScore ?? null;
+  const isLive = match.isLive;
+  const status = match.status;
+  const isFinished = match.isFinished;
+  const hasStarted = match.hasStarted;
+  const minute = match.minute;
+
+  const hasPenalties = () => {
+    return (
+      homePenaltyScore !== null &&
+      awayPenaltyScore !== null &&
+      (homePenaltyScore! > 0 || awayPenaltyScore! > 0)
+    );
+  };
+
+  const hasExtraTime = () => {
+    return (
+      homeExtraTimeScore !== null &&
+      awayExtraTimeScore !== null &&
+      (homeExtraTimeScore! > 0 || awayExtraTimeScore! > 0)
+    );
+  };
+
+  const isActuallyFinished = () => {
+    return (
+      hasPenalties() ||
+      hasExtraTime() ||
+      isFinished ||
+      status === MatchStatus.Finished ||
+      (hasStarted &&
+        homeScore !== null &&
+        awayScore !== null &&
+        (homeScore > 0 || awayScore > 0 || isFinished) &&
+        !isLive &&
+        status !== MatchStatus.Halftime)
+    );
+  };
+
   const getMatchStatus = () => {
-    if (match.isLive && match.minute) {
-      return `${match.minute}'`;
+    if (hasPenalties()) {
+      return 'FULL TIME (PEN)';
     }
 
-    if (match.isFinished) {
-      return 'FT';
+    if (hasExtraTime()) {
+      return 'FULL TIME (AET)';
     }
 
-    if (match.hasStarted) {
+    if (isActuallyFinished()) {
+      return 'FULL TIME';
+    }
+
+    if (isLive && minute) {
+      return `LIVE (${minute}')`;
+    }
+
+    if (isLive && !minute) {
       return 'LIVE';
     }
 
-    // Show kick-off time for upcoming matches
-    if (match.startTime) {
-      const startTime = new Date(match.startTime);
-      return startTime.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      });
+    if (status === MatchStatus.Halftime) {
+      return minute ? `HALF TIME (${minute}')` : 'HALF TIME';
     }
 
-    return match.status;
-  };
-
-  const getScoreDisplay = () => {
-    if (match.isFinished || match.hasStarted) {
-      const homeScore = match.homeScore ?? 0;
-      const awayScore = match.awayScore ?? 0;
-
-      // Show penalty scores if available
-      if (match.homePenaltyScore !== null && match.awayPenaltyScore !== null) {
-        return `${homeScore}-${awayScore} (${match.homePenaltyScore}-${match.awayPenaltyScore} pens)`;
+    if (status === MatchStatus.Scheduled || (!hasStarted && !isLive && !isFinished)) {
+      if (match.startTime) {
+        const startTime = new Date(match.startTime);
+        const timeString = startTime.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        });
+        return `PLAYS TODAY AT ${timeString}`;
       }
-
-      return `${homeScore}-${awayScore}`;
+      return 'SCHEDULED';
     }
 
-    return 'vs';
+    if (status === MatchStatus.Postponed) return 'POSTPONED';
+    if (status === MatchStatus.Cancelled) return 'CANCELLED';
+    if (status === MatchStatus.Suspended) return 'SUSPENDED';
+
+    return status?.toUpperCase?.() || status;
   };
 
-  const getStatusColor = () => {
-    if (match.isLive) return 'text-green-500';
-    if (match.isFinished) return 'text-gray-500';
-    return 'text-blue-500';
+  const getWinner = () => {
+    if (hasPenalties()) {
+      if (homePenaltyScore! > awayPenaltyScore!) return 'home';
+      if (awayPenaltyScore! > homePenaltyScore!) return 'away';
+      return null;
+    }
+
+    if (!isActuallyFinished()) return null;
+
+    const finalHomeScore = homeScore ?? 0;
+    const finalAwayScore = awayScore ?? 0;
+
+    if (finalHomeScore === finalAwayScore) return null;
+    return finalHomeScore > finalAwayScore ? 'home' : 'away';
   };
+
+  const winner = getWinner();
+  const matchStatus = getMatchStatus();
 
   return (
-    <div className="border border-border rounded-2xl p-1 hover:shadow-md transition-shadow">
-      {/* Status Bar */}
+    <div className="border border-border rounded-xl p-1 text-text-grey">
       <div className="p-2 flex items-center gap-2">
-        <span
-          className={`w-2 h-2 rounded-full ${match.isLive ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}
-        />
-        <p className={`text-sm font-medium ${getStatusColor()}`}>{getMatchStatus()}</p>
-        <span className="text-xs text-gray-500 ml-auto">
-          {match.league.displayName || match.league.name}
-        </span>
+        <span className={cn('w-1 h-4 rounded-sm', isLive ? 'bg-primary' : 'bg-app-background')} />
+        <p>{matchStatus}</p>
       </div>
 
-      {/* Teams and Score */}
       <div className="bg-app-background rounded-xl p-4">
-        <div className="space-y-3">
-          {/* Home Team */}
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 flex-1">
-              {match.homeTeam.logo && (
-                <div className="w-6 h-6 relative flex-shrink-0">
+              {homeTeam.logo && (
+                <div className="w-4 h-4 relative flex-shrink-0">
                   <Image
-                    src={match.homeTeam.logo}
-                    alt={`${match.homeTeam.name} logo`}
-                    width={24}
-                    height={24}
+                    src={homeTeam.logo}
+                    alt={`${homeTeam.name} logo`}
+                    width={16}
+                    height={16}
                     className="object-contain"
                     style={{ width: 'auto', height: 'auto' }}
                   />
                 </div>
               )}
-              <span className="font-medium text-sm truncate">{match.homeTeam.name}</span>
+              <span className=" text-xs truncate">{homeTeam.name}</span>
             </div>
-            <span className="text-lg font-bold min-w-[20px] text-center">
-              {match.isFinished || match.hasStarted ? (match.homeScore ?? 0) : ''}
-            </span>
+            <div className="flex gap-1 items-center min-w-[20px] justify-end">
+              <span className={cn('text-xs', winner === 'home' && 'text-foreground')}>
+                {isActuallyFinished() || hasStarted || isLive ? (homeScore ?? 0) : '-'}
+              </span>
+              {hasPenalties() && (
+                <span className={cn('text-xs', winner === 'home' && 'text-foreground')}>
+                  ({homePenaltyScore})
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Score Display */}
-          {/* <div className="text-center">
-            <span className="text-sm text-gray-600">{getScoreDisplay()}</span>
-          </div> */}
-
-          {/* Away Team */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 flex-1">
-              {match.awayTeam.logo && (
-                <div className="w-6 h-6 relative flex-shrink-0">
+              {awayTeam.logo && (
+                <div className="w-4 h-4 relative flex-shrink-0">
                   <Image
-                    src={match.awayTeam.logo}
-                    alt={`${match.awayTeam.name} logo`}
-                    width={24}
-                    height={24}
+                    src={awayTeam.logo}
+                    alt={`${awayTeam.name} logo`}
+                    width={16}
+                    height={16}
                     className="object-contain"
                     style={{ width: 'auto', height: 'auto' }}
                   />
                 </div>
               )}
-              <span className="font-medium text-sm truncate">{match.awayTeam.name}</span>
+              <span className="text-xs truncate">{awayTeam.name}</span>
             </div>
-            <span className="text-lg font-bold min-w-[20px] text-center">
-              {match.isFinished || match.hasStarted ? (match.awayScore ?? 0) : ''}
-            </span>
+            <div className="flex gap-1 items-center min-w-[20px] justify-end">
+              <span className={cn('text-xs text-center', winner === 'away' && 'text-foreground')}>
+                {isActuallyFinished() || hasStarted || isLive ? (awayScore ?? 0) : '-'}
+              </span>
+              {hasPenalties() && (
+                <span className={cn('text-xs text-center', winner === 'away' && 'text-foreground')}>
+                  ({awayPenaltyScore})
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
