@@ -1,11 +1,68 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useQuery } from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
 import Image from 'next/image';
 import { FixtureCard } from './fixture-card';
-import { GET_FIXTURES } from '@/lib/graphql/queries';
 import { Match, LeagueGroup } from '../types';
+
+export const GET_FIXTURES = gql`
+  query GetFixtures(
+    $date: String
+    $isLive: Boolean
+    $isToday: Boolean
+    $leagueId: String
+    $teamId: String
+    $limit: Float
+    $offset: Float
+  ) {
+    matches(
+      date: $date
+      isLive: $isLive
+      isToday: $isToday
+      leagueId: $leagueId
+      teamId: $teamId
+      limit: $limit
+      offset: $offset
+    ) {
+      id
+      homeTeam {
+        name
+        logo
+        id
+      }
+      awayTeam {
+        name
+        logo
+        id
+      }
+      awayScore
+      awayPenaltyScore
+      awayHalfTimeScore
+      awayExtraTimeScore
+      finishedAt
+      hasStarted
+      homeExtraTimeScore
+      homeHalfTimeScore
+      homePenaltyScore
+      homeScore
+      isLive
+      isFinished
+      minute
+      status
+      startTime
+      league {
+        id
+        name
+        displayName
+        logo
+        country
+      }
+      timeUntilStart
+      result
+    }
+  }
+`;
 
 interface FixturesListProps {
   initialDate?: string;
@@ -13,7 +70,7 @@ interface FixturesListProps {
 }
 
 const MATCHES_PER_PAGE = 20;
-const LIVE_POLL_INTERVAL = 30000; // 30 seconds
+const LIVE_POLL_INTERVAL = 30000; 
 
 export const FixturesList: React.FC<FixturesListProps> = ({
   initialDate,
@@ -23,14 +80,13 @@ export const FixturesList: React.FC<FixturesListProps> = ({
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [pollingStatus, setPollingStatus] = useState<'active' | 'inactive'>('inactive');
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const lastMatchRef = useRef<HTMLDivElement>(null);
 
   const effectiveDate = React.useMemo(() => {
     return initialDate ?? new Date().toISOString().split('T')[0];
   }, [initialDate]);
 
-  // Main matches query
   const {
     data: fixturesData,
     loading,
@@ -50,7 +106,6 @@ export const FixturesList: React.FC<FixturesListProps> = ({
     errorPolicy: 'all',
   });
 
-  // Update matches when data changes
   useEffect(() => {
     if (fixturesData?.matches) {
       if (offset === 0) {
@@ -62,20 +117,37 @@ export const FixturesList: React.FC<FixturesListProps> = ({
     }
   }, [fixturesData, offset]);
 
-  // Start/stop live polling based on whether there are live matches
+  const isPollingActive = React.useRef(false);
+
   useEffect(() => {
     const hasLiveMatches = matches.some(match => match.isLive);
+    const hasUpcomingMatches = matches.some(
+      match =>
+        !match.isFinished &&
+        !match.hasStarted &&
+        match.startTime &&
+        new Date(match.startTime).getTime() - Date.now() < 15 * 60 * 1000, // Starting within 15 minutes
+    );
 
-    if (hasLiveMatches) {
-      startPolling(LIVE_POLL_INTERVAL);
+    if (hasLiveMatches || hasUpcomingMatches) {
+      if (!isPollingActive.current) {
+        startPolling(LIVE_POLL_INTERVAL);
+        isPollingActive.current = true;
+      }
     } else {
-      stopPolling();
+      if (isPollingActive.current) {
+        stopPolling();
+        isPollingActive.current = false;
+      }
     }
 
-    return () => stopPolling();
+    return () => {
+      if (isPollingActive.current) {
+        stopPolling();
+        isPollingActive.current = false;
+      }
+    };
   }, [matches, startPolling, stopPolling]);
-
-  // No separate live query; we rely on polling the matches query
 
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore) return;
@@ -98,7 +170,7 @@ export const FixturesList: React.FC<FixturesListProps> = ({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [fetchMore, offset, hasMore, isLoadingMore]);
+  }, [fetchMore, offset, hasMore, isLoadingMore, effectiveDate, initialIsToday]);
 
   // Infinite scroll logic
   const lastMatchElementRef = useCallback(
@@ -118,7 +190,6 @@ export const FixturesList: React.FC<FixturesListProps> = ({
     [loading, isLoadingMore, hasMore, loadMore],
   );
 
-  // Group matches by league
   const groupedMatches = React.useMemo(() => {
     const groups = new Map<string, LeagueGroup>();
 
@@ -186,28 +257,10 @@ export const FixturesList: React.FC<FixturesListProps> = ({
     <div className="space-y-6">
       {groupedMatches.map(({ league, matches: leagueMatches }, groupIndex) => (
         <div key={league.id} className="space-y-3">
-          {/* League Header */}
-          <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
-            {league.logo && (
-              <div className="w-6 h-6 relative">
-                <Image
-                  src={league.logo}
-                  alt={`${league.name} logo`}
-                  width={24}
-                  height={24}
-                  className="object-contain"
-                  style={{ width: 'auto', height: 'auto' }}
-                />
-              </div>
-            )}
-            <h3 className="font-semibold text-lg">{league.displayName || league.name}</h3>
-            {league.country && <span className="text-sm text-gray-500">({league.country})</span>}
-            <span className="text-sm text-gray-400 ml-auto">
-              {leagueMatches.length} match{leagueMatches.length !== 1 ? 'es' : ''}
-            </span>
+          <div className="flex items-center gap-3 pb-2">
+            <h3 className="font-medium text-base">{league.displayName || league.name}</h3>
           </div>
 
-          {/* League Matches */}
           <div className="grid gap-3">
             {leagueMatches.map((match, matchIndex) => {
               const isLastMatch =
@@ -223,7 +276,6 @@ export const FixturesList: React.FC<FixturesListProps> = ({
         </div>
       ))}
 
-      {/* Loading indicator */}
       {isLoadingMore && (
         <div className="text-center py-4">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
@@ -231,7 +283,6 @@ export const FixturesList: React.FC<FixturesListProps> = ({
         </div>
       )}
 
-      {/* End of results indicator */}
       {!hasMore && matches.length > 0 && (
         <div className="text-center py-4 text-gray-500 text-sm">No more fixtures to load</div>
       )}

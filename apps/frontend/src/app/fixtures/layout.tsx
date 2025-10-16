@@ -7,10 +7,7 @@ import { Button, Chat } from '@/components';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui';
 import { AuthWrapper } from '@/components/auth/auth-wrapper';
 
-
-
 // graphQl
-
 
 export default function FixturesLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useMobile();
