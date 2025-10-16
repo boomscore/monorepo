@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import type { GetGroupedFixturesQuery } from '@/gql/graphql';
 import { MatchStatus } from '@/gql/graphql';
+import Link from 'next/link';
 
 type Match = GetGroupedFixturesQuery['matchesGroupedByLeague']['groups'][0]['matches'][0];
 
@@ -121,71 +122,78 @@ export const FixtureCard: React.FC<FixtureCardProps> = ({ match }) => {
   const matchStatus = getMatchStatus();
 
   return (
-    <div className="border border-border rounded-xl p-1 text-text-grey">
-      <div className="p-2 flex items-center gap-2">
-        <span className={cn('w-1 h-4 rounded-sm', isLive ? 'bg-primary' : 'bg-app-background')} />
-        <p>{matchStatus}</p>
-      </div>
+    <Link
+      href={`/fixtures/${match.id}`}
+      className="outline-primary border border-border rounded-xl overflow-hidden p-1 text-text-grey cursor-pointer  block"
+    >
+      <div>
+        <div className="p-2 flex items-center gap-2">
+          <span className={cn('w-1 h-4 rounded-sm', isLive ? 'bg-primary' : 'bg-app-background')} />
+          <p>{matchStatus}</p>
+        </div>
 
-      <div className="bg-app-background rounded-xl p-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1">
-              {homeTeam.logo && (
-                <div className="w-4 h-4 relative flex-shrink-0">
-                  <Image
-                    src={homeTeam.logo}
-                    alt={`${homeTeam.name} logo`}
-                    width={16}
-                    height={16}
-                    className="object-contain"
-                    style={{ width: 'auto', height: 'auto' }}
-                  />
-                </div>
-              )}
-              <span className=" text-xs truncate">{homeTeam.name}</span>
-            </div>
-            <div className="flex gap-1 items-center min-w-[20px] justify-end">
-              <span className={cn('text-xs', winner === 'home' && 'text-foreground')}>
-                {isActuallyFinished() || hasStarted || isLive ? (homeScore ?? 0) : '-'}
-              </span>
-              {hasPenalties() && (
+        <div className="bg-app-background rounded-xl p-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 flex-1">
+                {homeTeam.logo && (
+                  <div className="w-4 h-4 relative flex-shrink-0">
+                    <Image
+                      src={homeTeam.logo}
+                      alt={`${homeTeam.name} logo`}
+                      width={16}
+                      height={16}
+                      className="object-contain"
+                      style={{ width: 'auto', height: 'auto' }}
+                    />
+                  </div>
+                )}
+                <span className=" text-xs truncate">{homeTeam.name}</span>
+              </div>
+              <div className="flex gap-1 items-center min-w-[20px] justify-end">
                 <span className={cn('text-xs', winner === 'home' && 'text-foreground')}>
-                  ({homePenaltyScore})
+                  {isActuallyFinished() || hasStarted || isLive ? (homeScore ?? 0) : '-'}
                 </span>
-              )}
+                {hasPenalties() && (
+                  <span className={cn('text-xs', winner === 'home' && 'text-foreground')}>
+                    ({homePenaltyScore})
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1">
-              {awayTeam.logo && (
-                <div className="w-4 h-4 relative flex-shrink-0">
-                  <Image
-                    src={awayTeam.logo}
-                    alt={`${awayTeam.name} logo`}
-                    width={16}
-                    height={16}
-                    className="object-contain"
-                    style={{ width: 'auto', height: 'auto' }}
-                  />
-                </div>
-              )}
-              <span className="text-xs truncate">{awayTeam.name}</span>
-            </div>
-            <div className="flex gap-1 items-center min-w-[20px] justify-end">
-              <span className={cn('text-xs text-center', winner === 'away' && 'text-foreground')}>
-                {isActuallyFinished() || hasStarted || isLive ? (awayScore ?? 0) : '-'}
-              </span>
-              {hasPenalties() && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 flex-1">
+                {awayTeam.logo && (
+                  <div className="w-4 h-4 relative flex-shrink-0">
+                    <Image
+                      src={awayTeam.logo}
+                      alt={`${awayTeam.name} logo`}
+                      width={16}
+                      height={16}
+                      className="object-contain"
+                      style={{ width: 'auto', height: 'auto' }}
+                    />
+                  </div>
+                )}
+                <span className="text-xs truncate">{awayTeam.name}</span>
+              </div>
+              <div className="flex gap-1 items-center min-w-[20px] justify-end">
                 <span className={cn('text-xs text-center', winner === 'away' && 'text-foreground')}>
-                  ({awayPenaltyScore})
+                  {isActuallyFinished() || hasStarted || isLive ? (awayScore ?? 0) : '-'}
                 </span>
-              )}
+                {hasPenalties() && (
+                  <span
+                    className={cn('text-xs text-center', winner === 'away' && 'text-foreground')}
+                  >
+                    ({awayPenaltyScore})
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
