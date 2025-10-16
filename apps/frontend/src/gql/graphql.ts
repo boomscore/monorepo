@@ -170,6 +170,14 @@ export type GeneratePredictionInput = {
   scenario?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type GroupedMatchesResult = {
+  __typename?: 'GroupedMatchesResult';
+  groups: Array<LeagueGroup>;
+  hasMore: Scalars['Boolean']['output'];
+  totalGroups: Scalars['Int']['output'];
+  totalMatches: Scalars['Int']['output'];
+};
+
 export type InitiatePaymentInput = {
   billingCycle: BillingCycle;
   plan: SubscriptionPlan;
@@ -203,6 +211,15 @@ export type League = {
   totalTeams: Scalars['Float']['output'];
   type: LeagueType;
   updatedAt: Scalars['DateTime']['output'];
+};
+
+export type LeagueGroup = {
+  __typename?: 'LeagueGroup';
+  hasLiveMatches: Scalars['Boolean']['output'];
+  hasUpcomingMatches: Scalars['Boolean']['output'];
+  league: League;
+  matches: Array<Match>;
+  totalMatches: Scalars['Int']['output'];
 };
 
 /** Type of league/competition */
@@ -672,6 +689,7 @@ export type Query = {
   matchEvents: Array<MatchEvent>;
   matchWithDetails?: Maybe<Match>;
   matches: Array<Match>;
+  matchesGroupedByLeague: GroupedMatchesResult;
   me: User;
   myActiveSubscription?: Maybe<Subscription>;
   myConversations: Array<Conversation>;
@@ -756,6 +774,17 @@ export type QueryMatchWithDetailsArgs = {
 
 
 export type QueryMatchesArgs = {
+  date?: InputMaybe<Scalars['String']['input']>;
+  isLive?: InputMaybe<Scalars['Boolean']['input']>;
+  isToday?: InputMaybe<Scalars['Boolean']['input']>;
+  leagueId?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Float']['input']>;
+  offset?: InputMaybe<Scalars['Float']['input']>;
+  teamId?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryMatchesGroupedByLeagueArgs = {
   date?: InputMaybe<Scalars['String']['input']>;
   isLive?: InputMaybe<Scalars['Boolean']['input']>;
   isToday?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1047,75 +1076,7 @@ export enum UserStatus {
   Suspended = 'SUSPENDED'
 }
 
-export type LoginMutationVariables = Exact<{
-  input: LoginInput;
-}>;
-
-
-export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'AuthResponse', accessToken: string, message: string, user: { __typename?: 'User', id: string, username: string, email: string, firstName?: string | null, lastName?: string | null, fullName: string, avatar?: string | null, role: UserRole, isActive: boolean } } };
-
-export type RegisterMutationVariables = Exact<{
-  input: CreateUserInput;
-}>;
-
-
-export type RegisterMutation = { __typename?: 'Mutation', register: { __typename?: 'AuthResponse', accessToken: string, message: string, user: { __typename?: 'User', id: string, username: string, email: string, firstName?: string | null, lastName?: string | null, fullName: string, avatar?: string | null, role: UserRole, isActive: boolean } } };
-
-export type LogoutMutationVariables = Exact<{ [key: string]: never; }>;
-
-
-export type LogoutMutation = { __typename?: 'Mutation', logout: boolean };
-
-export type UpdateProfileMutationVariables = Exact<{
-  input: UpdateUserInput;
-}>;
-
-
-export type UpdateProfileMutation = { __typename?: 'Mutation', updateProfile: { __typename?: 'User', id: string, username: string, email: string, firstName?: string | null, lastName?: string | null, fullName: string, avatar?: string | null, country?: string | null, timezone?: string | null, preferredLanguage?: string | null, phoneNumber?: string | null, dateOfBirth?: any | null } };
-
-export type ChangePasswordMutationVariables = Exact<{
-  input: ChangePasswordInput;
-}>;
-
-
-export type ChangePasswordMutation = { __typename?: 'Mutation', changePassword: { __typename?: 'User', id: string, email: string, username: string } };
-
-export type CreateConversationMutationVariables = Exact<{
-  input: CreateConversationInput;
-}>;
-
-
-export type CreateConversationMutation = { __typename?: 'Mutation', createConversation: { __typename?: 'Conversation', id: string, title?: string | null, displayTitle: string, description?: string | null, systemPrompt?: string | null, isActive: boolean, createdAt: any, updatedAt: any } };
-
-export type SendMessageMutationVariables = Exact<{
-  input: SendMessageInput;
-}>;
-
-
-export type SendMessageMutation = { __typename?: 'Mutation', sendMessage: { __typename?: 'SendMessageResponse', conversation: { __typename?: 'Conversation', id: string, displayTitle: string, lastMessageAt?: any | null, messageCount: number }, userMessage: { __typename?: 'ChatMessage', id: string, content: string, role: ChatMessageRole, createdAt: any }, assistantMessage: { __typename?: 'ChatMessage', id: string, content: string, role: ChatMessageRole, responseTime?: number | null, tokens?: number | null, cost?: number | null, createdAt: any } } };
-
-export type GeneratePredictionsMutationVariables = Exact<{
-  input: GeneratePredictionInput;
-}>;
-
-
-export type GeneratePredictionsMutation = { __typename?: 'Mutation', generatePredictions: Array<{ __typename?: 'Prediction', id: string, type: PredictionType, outcome: PredictionOutcome, confidence: number, confidenceLevel: string, displayText: string, reasoning?: string | null, details?: any | null, odds?: number | null, potentialWin?: number | null, status: PredictionStatus, createdAt: any, match: { __typename?: 'Match', id: string, startTime: any, homeTeam: { __typename?: 'Team', id: string, name: string, displayName: string, logo?: string | null }, awayTeam: { __typename?: 'Team', id: string, name: string, displayName: string, logo?: string | null }, league: { __typename?: 'League', id: string, name: string, displayName: string } } }> };
-
-export type GetMeQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetMeQuery = { __typename?: 'Query', me: { __typename?: 'User', id: string, username: string, email: string, firstName?: string | null, lastName?: string | null, fullName: string, avatar?: string | null, phoneNumber?: string | null, country?: string | null, timezone?: string | null, preferredLanguage?: string | null, isActive: boolean, isSubscribed: boolean, role: UserRole, status: UserStatus, createdAt: any } };
-
-export type GetLeaguesQueryVariables = Exact<{
-  sportId?: InputMaybe<Scalars['String']['input']>;
-  country?: InputMaybe<Scalars['String']['input']>;
-  isActive?: InputMaybe<Scalars['Boolean']['input']>;
-}>;
-
-
-export type GetLeaguesQuery = { __typename?: 'Query', leagues: Array<{ __typename?: 'League', id: string, name: string, displayName: string, fullName: string, slug: string, country: string, countryCode?: string | null, countryFlag?: string | null, logo?: string | null, isActive: boolean, isFeatured: boolean, currentSeason?: number | null, totalMatches: number, totalTeams: number, sport: { __typename?: 'Sport', id: string, name: string, displayName: string, slug: string } }> };
-
-export type GetMatchesQueryVariables = Exact<{
+export type GetGroupedFixturesQueryVariables = Exact<{
   date?: InputMaybe<Scalars['String']['input']>;
   isLive?: InputMaybe<Scalars['Boolean']['input']>;
   isToday?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1126,35 +1087,7 @@ export type GetMatchesQueryVariables = Exact<{
 }>;
 
 
-export type GetMatchesQuery = { __typename?: 'Query', matches: Array<{ __typename?: 'Match', id: string, startTime: any, status: MatchStatus, shortStatus: string, hasStarted: boolean, isFinished: boolean, isLive: boolean, isUpcoming: boolean, isFeatured: boolean, homeScore?: number | null, awayScore?: number | null, displayScore: string, timeUntilStart: number, minute?: number | null, result: MatchResult, homeTeam: { __typename?: 'Team', id: string, name: string, displayName: string, shortName?: string | null, logo?: string | null }, awayTeam: { __typename?: 'Team', id: string, name: string, displayName: string, shortName?: string | null, logo?: string | null }, league: { __typename?: 'League', id: string, name: string, displayName: string, logo?: string | null, country: string } }> };
-
-export type GetLiveMatchesQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetLiveMatchesQuery = { __typename?: 'Query', liveMatches: Array<{ __typename?: 'Match', id: string, startTime: any, status: MatchStatus, shortStatus: string, minute?: number | null, homeScore?: number | null, awayScore?: number | null, displayScore: string, homeTeam: { __typename?: 'Team', id: string, name: string, displayName: string, logo?: string | null }, awayTeam: { __typename?: 'Team', id: string, name: string, displayName: string, logo?: string | null }, league: { __typename?: 'League', id: string, name: string, displayName: string, logo?: string | null, country: string } }> };
-
-export type GetTodaysMatchesQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetTodaysMatchesQuery = { __typename?: 'Query', todaysMatches: Array<{ __typename?: 'Match', id: string, startTime: any, status: MatchStatus, shortStatus: string, hasStarted: boolean, isFinished: boolean, isLive: boolean, homeScore?: number | null, awayScore?: number | null, displayScore: string, timeUntilStart: number, homeTeam: { __typename?: 'Team', id: string, name: string, displayName: string, logo?: string | null }, awayTeam: { __typename?: 'Team', id: string, name: string, displayName: string, logo?: string | null }, league: { __typename?: 'League', id: string, name: string, displayName: string, logo?: string | null } }> };
-
-export type GetFixturesQueryVariables = Exact<{
-  date?: InputMaybe<Scalars['String']['input']>;
-  isLive?: InputMaybe<Scalars['Boolean']['input']>;
-  isToday?: InputMaybe<Scalars['Boolean']['input']>;
-  leagueId?: InputMaybe<Scalars['String']['input']>;
-  teamId?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Float']['input']>;
-  offset?: InputMaybe<Scalars['Float']['input']>;
-}>;
-
-
-export type GetFixturesQuery = { __typename?: 'Query', matches: Array<{ __typename?: 'Match', id: string, awayScore?: number | null, awayPenaltyScore?: number | null, awayHalfTimeScore?: number | null, awayExtraTimeScore?: number | null, finishedAt?: any | null, hasStarted: boolean, homeExtraTimeScore?: number | null, homeHalfTimeScore?: number | null, homePenaltyScore?: number | null, homeScore?: number | null, isLive: boolean, isFinished: boolean, minute?: number | null, status: MatchStatus, startTime: any, timeUntilStart: number, result: MatchResult, homeTeam: { __typename?: 'Team', name: string, logo?: string | null, id: string }, awayTeam: { __typename?: 'Team', name: string, logo?: string | null, id: string }, league: { __typename?: 'League', id: string, name: string, displayName: string, logo?: string | null, country: string } }> };
-
-export type GetLiveFixturesQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetLiveFixturesQuery = { __typename?: 'Query', liveMatches: Array<{ __typename?: 'Match', id: string, awayScore?: number | null, awayPenaltyScore?: number | null, awayHalfTimeScore?: number | null, awayExtraTimeScore?: number | null, finishedAt?: any | null, hasStarted: boolean, homeExtraTimeScore?: number | null, homeHalfTimeScore?: number | null, homePenaltyScore?: number | null, homeScore?: number | null, isLive: boolean, isFinished: boolean, minute?: number | null, status: MatchStatus, startTime: any, timeUntilStart: number, result: MatchResult, homeTeam: { __typename?: 'Team', name: string, logo?: string | null, id: string }, awayTeam: { __typename?: 'Team', name: string, logo?: string | null, id: string }, league: { __typename?: 'League', id: string, name: string, displayName: string, logo?: string | null, country: string } }> };
+export type GetGroupedFixturesQuery = { __typename?: 'Query', matchesGroupedByLeague: { __typename?: 'GroupedMatchesResult', totalMatches: number, totalGroups: number, hasMore: boolean, groups: Array<{ __typename?: 'LeagueGroup', totalMatches: number, hasLiveMatches: boolean, hasUpcomingMatches: boolean, league: { __typename?: 'League', id: string, name: string, displayName: string, logo?: string | null, country: string }, matches: Array<{ __typename?: 'Match', id: string, awayScore?: number | null, awayPenaltyScore?: number | null, awayHalfTimeScore?: number | null, awayExtraTimeScore?: number | null, finishedAt?: any | null, hasStarted: boolean, homeExtraTimeScore?: number | null, homeHalfTimeScore?: number | null, homePenaltyScore?: number | null, homeScore?: number | null, isLive: boolean, isFinished: boolean, minute?: number | null, status: MatchStatus, startTime: any, timeUntilStart: number, result: MatchResult, homeTeam: { __typename?: 'Team', name: string, logo?: string | null, id: string }, awayTeam: { __typename?: 'Team', name: string, logo?: string | null, id: string }, league: { __typename?: 'League', id: string, name: string, displayName: string, logo?: string | null, country: string } }> }> } };
 
 export class TypedDocumentString<TResult, TVariables>
   extends String
@@ -1175,409 +1108,69 @@ export class TypedDocumentString<TResult, TVariables>
   }
 }
 
-export const LoginDocument = new TypedDocumentString(`
-    mutation Login($input: LoginInput!) {
-  login(input: $input) {
-    accessToken
-    message
-    user {
-      id
-      username
-      email
-      firstName
-      lastName
-      fullName
-      avatar
-      role
-      isActive
-    }
-  }
-}
-    `) as unknown as TypedDocumentString<LoginMutation, LoginMutationVariables>;
-export const RegisterDocument = new TypedDocumentString(`
-    mutation Register($input: CreateUserInput!) {
-  register(input: $input) {
-    accessToken
-    message
-    user {
-      id
-      username
-      email
-      firstName
-      lastName
-      fullName
-      avatar
-      role
-      isActive
-    }
-  }
-}
-    `) as unknown as TypedDocumentString<RegisterMutation, RegisterMutationVariables>;
-export const LogoutDocument = new TypedDocumentString(`
-    mutation Logout {
-  logout
-}
-    `) as unknown as TypedDocumentString<LogoutMutation, LogoutMutationVariables>;
-export const UpdateProfileDocument = new TypedDocumentString(`
-    mutation UpdateProfile($input: UpdateUserInput!) {
-  updateProfile(input: $input) {
-    id
-    username
-    email
-    firstName
-    lastName
-    fullName
-    avatar
-    country
-    timezone
-    preferredLanguage
-    phoneNumber
-    dateOfBirth
-  }
-}
-    `) as unknown as TypedDocumentString<UpdateProfileMutation, UpdateProfileMutationVariables>;
-export const ChangePasswordDocument = new TypedDocumentString(`
-    mutation ChangePassword($input: ChangePasswordInput!) {
-  changePassword(input: $input) {
-    id
-    email
-    username
-  }
-}
-    `) as unknown as TypedDocumentString<ChangePasswordMutation, ChangePasswordMutationVariables>;
-export const CreateConversationDocument = new TypedDocumentString(`
-    mutation CreateConversation($input: CreateConversationInput!) {
-  createConversation(input: $input) {
-    id
-    title
-    displayTitle
-    description
-    systemPrompt
-    isActive
-    createdAt
-    updatedAt
-  }
-}
-    `) as unknown as TypedDocumentString<CreateConversationMutation, CreateConversationMutationVariables>;
-export const SendMessageDocument = new TypedDocumentString(`
-    mutation SendMessage($input: SendMessageInput!) {
-  sendMessage(input: $input) {
-    conversation {
-      id
-      displayTitle
-      lastMessageAt
-      messageCount
-    }
-    userMessage {
-      id
-      content
-      role
-      createdAt
-    }
-    assistantMessage {
-      id
-      content
-      role
-      responseTime
-      tokens
-      cost
-      createdAt
-    }
-  }
-}
-    `) as unknown as TypedDocumentString<SendMessageMutation, SendMessageMutationVariables>;
-export const GeneratePredictionsDocument = new TypedDocumentString(`
-    mutation GeneratePredictions($input: GeneratePredictionInput!) {
-  generatePredictions(input: $input) {
-    id
-    type
-    outcome
-    confidence
-    confidenceLevel
-    displayText
-    reasoning
-    details
-    odds
-    potentialWin
-    status
-    match {
-      id
-      startTime
-      homeTeam {
-        id
-        name
-        displayName
-        logo
-      }
-      awayTeam {
-        id
-        name
-        displayName
-        logo
-      }
+export const GetGroupedFixturesDocument = new TypedDocumentString(`
+    query GetGroupedFixtures($date: String, $isLive: Boolean, $isToday: Boolean, $leagueId: String, $teamId: String, $limit: Float, $offset: Float) {
+  matchesGroupedByLeague(
+    date: $date
+    isLive: $isLive
+    isToday: $isToday
+    leagueId: $leagueId
+    teamId: $teamId
+    limit: $limit
+    offset: $offset
+  ) {
+    groups {
       league {
         id
         name
         displayName
+        logo
+        country
       }
+      matches {
+        id
+        homeTeam {
+          name
+          logo
+          id
+        }
+        awayTeam {
+          name
+          logo
+          id
+        }
+        awayScore
+        awayPenaltyScore
+        awayHalfTimeScore
+        awayExtraTimeScore
+        finishedAt
+        hasStarted
+        homeExtraTimeScore
+        homeHalfTimeScore
+        homePenaltyScore
+        homeScore
+        isLive
+        isFinished
+        minute
+        status
+        startTime
+        league {
+          id
+          name
+          displayName
+          logo
+          country
+        }
+        timeUntilStart
+        result
+      }
+      totalMatches
+      hasLiveMatches
+      hasUpcomingMatches
     }
-    createdAt
-  }
-}
-    `) as unknown as TypedDocumentString<GeneratePredictionsMutation, GeneratePredictionsMutationVariables>;
-export const GetMeDocument = new TypedDocumentString(`
-    query GetMe {
-  me {
-    id
-    username
-    email
-    firstName
-    lastName
-    fullName
-    avatar
-    phoneNumber
-    country
-    timezone
-    preferredLanguage
-    isActive
-    isSubscribed
-    role
-    status
-    createdAt
-  }
-}
-    `) as unknown as TypedDocumentString<GetMeQuery, GetMeQueryVariables>;
-export const GetLeaguesDocument = new TypedDocumentString(`
-    query GetLeagues($sportId: String, $country: String, $isActive: Boolean) {
-  leagues(sportId: $sportId, country: $country, isActive: $isActive) {
-    id
-    name
-    displayName
-    fullName
-    slug
-    country
-    countryCode
-    countryFlag
-    logo
-    isActive
-    isFeatured
-    currentSeason
     totalMatches
-    totalTeams
-    sport {
-      id
-      name
-      displayName
-      slug
-    }
+    totalGroups
+    hasMore
   }
 }
-    `) as unknown as TypedDocumentString<GetLeaguesQuery, GetLeaguesQueryVariables>;
-export const GetMatchesDocument = new TypedDocumentString(`
-    query GetMatches($date: String, $isLive: Boolean, $isToday: Boolean, $leagueId: String, $teamId: String, $limit: Float, $offset: Float) {
-  matches(
-    date: $date
-    isLive: $isLive
-    isToday: $isToday
-    leagueId: $leagueId
-    teamId: $teamId
-    limit: $limit
-    offset: $offset
-  ) {
-    id
-    startTime
-    status
-    shortStatus
-    hasStarted
-    isFinished
-    isLive
-    isUpcoming
-    isFeatured
-    homeScore
-    awayScore
-    displayScore
-    homeTeam {
-      id
-      name
-      displayName
-      shortName
-      logo
-    }
-    awayTeam {
-      id
-      name
-      displayName
-      shortName
-      logo
-    }
-    league {
-      id
-      name
-      displayName
-      logo
-      country
-    }
-    timeUntilStart
-    minute
-    result
-  }
-}
-    `) as unknown as TypedDocumentString<GetMatchesQuery, GetMatchesQueryVariables>;
-export const GetLiveMatchesDocument = new TypedDocumentString(`
-    query GetLiveMatches {
-  liveMatches {
-    id
-    startTime
-    status
-    shortStatus
-    minute
-    homeScore
-    awayScore
-    displayScore
-    homeTeam {
-      id
-      name
-      displayName
-      logo
-    }
-    awayTeam {
-      id
-      name
-      displayName
-      logo
-    }
-    league {
-      id
-      name
-      displayName
-      logo
-      country
-    }
-  }
-}
-    `) as unknown as TypedDocumentString<GetLiveMatchesQuery, GetLiveMatchesQueryVariables>;
-export const GetTodaysMatchesDocument = new TypedDocumentString(`
-    query GetTodaysMatches {
-  todaysMatches {
-    id
-    startTime
-    status
-    shortStatus
-    hasStarted
-    isFinished
-    isLive
-    homeScore
-    awayScore
-    displayScore
-    homeTeam {
-      id
-      name
-      displayName
-      logo
-    }
-    awayTeam {
-      id
-      name
-      displayName
-      logo
-    }
-    league {
-      id
-      name
-      displayName
-      logo
-    }
-    timeUntilStart
-  }
-}
-    `) as unknown as TypedDocumentString<GetTodaysMatchesQuery, GetTodaysMatchesQueryVariables>;
-export const GetFixturesDocument = new TypedDocumentString(`
-    query GetFixtures($date: String, $isLive: Boolean, $isToday: Boolean, $leagueId: String, $teamId: String, $limit: Float, $offset: Float) {
-  matches(
-    date: $date
-    isLive: $isLive
-    isToday: $isToday
-    leagueId: $leagueId
-    teamId: $teamId
-    limit: $limit
-    offset: $offset
-  ) {
-    id
-    homeTeam {
-      name
-      logo
-      id
-    }
-    awayTeam {
-      name
-      logo
-      id
-    }
-    awayScore
-    awayPenaltyScore
-    awayHalfTimeScore
-    awayExtraTimeScore
-    finishedAt
-    hasStarted
-    homeExtraTimeScore
-    homeHalfTimeScore
-    homePenaltyScore
-    homeScore
-    isLive
-    isFinished
-    minute
-    status
-    startTime
-    league {
-      id
-      name
-      displayName
-      logo
-      country
-    }
-    timeUntilStart
-    result
-  }
-}
-    `) as unknown as TypedDocumentString<GetFixturesQuery, GetFixturesQueryVariables>;
-export const GetLiveFixturesDocument = new TypedDocumentString(`
-    query GetLiveFixtures {
-  liveMatches {
-    id
-    homeTeam {
-      name
-      logo
-      id
-    }
-    awayTeam {
-      name
-      logo
-      id
-    }
-    awayScore
-    awayPenaltyScore
-    awayHalfTimeScore
-    awayExtraTimeScore
-    finishedAt
-    hasStarted
-    homeExtraTimeScore
-    homeHalfTimeScore
-    homePenaltyScore
-    homeScore
-    isLive
-    isFinished
-    minute
-    status
-    startTime
-    league {
-      id
-      name
-      displayName
-      logo
-      country
-    }
-    timeUntilStart
-    result
-  }
-}
-    `) as unknown as TypedDocumentString<GetLiveFixturesQuery, GetLiveFixturesQueryVariables>;
+    `) as unknown as TypedDocumentString<GetGroupedFixturesQuery, GetGroupedFixturesQueryVariables>;

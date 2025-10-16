@@ -1,7 +1,9 @@
 import React from 'react';
 import Image from 'next/image';
-import { Match } from '../types';
 import { cn } from '@/lib/utils';
+import type { GetGroupedFixturesQuery } from '@/gql/graphql';
+
+type Match = GetGroupedFixturesQuery['matchesGroupedByLeague']['groups'][0]['matches'][0];
 
 interface FixtureCardProps {
   match: Match;

@@ -5,6 +5,7 @@ import { Match, MatchStatus } from '../entities/match.entity';
 import { MatchEvent, MatchEventType } from '../entities/match-event.entity';
 import { SportsApiService, ApiSportsEvent } from './sports-api.service';
 import { LoggerService } from '@/common/services/logger.service';
+import { LeagueGroup, GroupedMatchesResult } from '../dto/league-group.dto';
 
 export interface MatchFilters {
   date?: string;
@@ -117,6 +118,112 @@ export class MatchesService {
       sortBy: 'startTime',
       sortOrder: 'ASC',
     });
+  }
+
+  async findMatchesGroupedByLeague(filters: MatchFilters = {}): Promise<GroupedMatchesResult> {
+    const {
+      date,
+      leagueId,
+      teamId,
+      status,
+      isLive,
+      isToday,
+      limit = 100,
+      offset = 0,
+      sortBy = 'startTime',
+      sortOrder = 'ASC',
+    } = filters;
+
+    const queryBuilder = this.matchRepository
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.homeTeam', 'homeTeam')
+      .leftJoinAndSelect('match.awayTeam', 'awayTeam')
+      .leftJoinAndSelect('match.league', 'league');
+
+    if (date) {
+      if (date === 'today') {
+        const today = new Date().toISOString().split('T')[0];
+        queryBuilder.andWhere('DATE(match.startTime) = :date', { date: today });
+      } else {
+        queryBuilder.andWhere('DATE(match.startTime) = :date', { date });
+      }
+    }
+
+    if (isToday) {
+      const today = new Date().toISOString().split('T')[0];
+      queryBuilder.andWhere('DATE(match.startTime) = :today', { today });
+    }
+
+    if (leagueId) {
+      queryBuilder.andWhere('match.leagueId = :leagueId', { leagueId });
+    }
+
+    if (teamId) {
+      queryBuilder.andWhere('(match.homeTeamId = :teamId OR match.awayTeamId = :teamId)', {
+        teamId,
+      });
+    }
+
+    if (status) {
+      queryBuilder.andWhere('match.status = :status', { status });
+    }
+
+    if (isLive) {
+      queryBuilder.andWhere('match.status IN (:...liveStatuses)', {
+        liveStatuses: ['LIVE', 'HALFTIME'],
+      });
+    }
+
+    queryBuilder.orderBy('league.name', 'ASC').addOrderBy(`match.${sortBy}`, sortOrder);
+
+    const totalMatches = await queryBuilder.getCount();
+
+    queryBuilder.skip(offset).take(limit);
+
+    const matches = await queryBuilder.getMany();
+
+    const leagueGroups = new Map<string, LeagueGroup>();
+
+    for (const match of matches) {
+      const leagueId = match.league.id;
+
+      if (!leagueGroups.has(leagueId)) {
+        leagueGroups.set(leagueId, {
+          league: match.league,
+          matches: [],
+          totalMatches: 0,
+          hasLiveMatches: false,
+          hasUpcomingMatches: false,
+        });
+      }
+
+      const group = leagueGroups.get(leagueId)!;
+      group.matches.push(match);
+      group.totalMatches++;
+
+      if (match.isLive) {
+        group.hasLiveMatches = true;
+      }
+      if (match.isUpcoming) {
+        group.hasUpcomingMatches = true;
+      }
+    }
+
+    const groups = Array.from(leagueGroups.values());
+
+    this.logger.info('Grouped matches retrieved', {
+      service: 'matches',
+      totalMatches: matches.length,
+      totalGroups: groups.length,
+      filters,
+    });
+
+    return {
+      groups,
+      totalMatches: matches.length,
+      totalGroups: groups.length,
+      hasMore: offset + matches.length < totalMatches,
+    };
   }
 
   async getUpcomingMatches(days: number = 7): Promise<Match[]> {
