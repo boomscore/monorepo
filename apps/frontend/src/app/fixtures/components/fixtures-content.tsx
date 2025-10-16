@@ -91,7 +91,7 @@ export const FixturesContent = () => {
   }
 
   return (
-    <div className="flex-1 max-w-4xl mx-auto bg-bg-app">
+    <div className="flex-1 max-w-3xl mx-auto">
       <div className="p-4">
         <FixtureSportType />
       </div>
@@ -120,9 +120,6 @@ export const FixturesContent = () => {
             <ArrowRightIcon />
           </Button>
         </div>
-
-
-        
       </div>
       <Separator />
 

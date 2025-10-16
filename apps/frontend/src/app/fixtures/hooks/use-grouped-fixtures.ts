@@ -73,40 +73,40 @@ export function useGroupedFixtures({
         0,
       );
 
-      // If this is a polling update (offset = 0) and we already have more data than what's coming in,
-      // merge intelligently to preserve infinite scroll
-      if (
+      const isPollingUpdate =
         offset === 0 &&
         totalLoadedMatches > incomingTotalMatches &&
-        incomingTotalMatches <= MATCHES_PER_PAGE
-      ) {
+        incomingTotalMatches <= MATCHES_PER_PAGE &&
+        groupedMatches.length > 0;
+
+      if (isPollingUpdate) {
         setGroupedMatches(prev => {
           const mergedGroups = new Map<string, LeagueGroup>();
           prev.forEach(group => {
-            mergedGroups.set(group.league.id, group);
+            mergedGroups.set(group.league.id, { ...group });
           });
-          groupedData.groups.forEach((newGroup: LeagueGroup) => {
-            const existingGroup = mergedGroups.get(newGroup.league.id);
+
+          groupedData.groups.forEach((polledGroup: LeagueGroup) => {
+            const existingGroup = mergedGroups.get(polledGroup.league.id);
             if (existingGroup) {
-              // Update existing matches with fresh data for status/scores
               const updatedMatches = existingGroup.matches.map(existingMatch => {
-                const freshMatch = newGroup.matches.find(m => m.id === existingMatch.id);
+                const freshMatch = polledGroup.matches.find(m => m.id === existingMatch.id);
                 return freshMatch || existingMatch;
               });
 
-              // Add any new matches from polling that weren't in our existing data
               const existingMatchIds = new Set(existingGroup.matches.map(m => m.id));
-              const newMatches = newGroup.matches.filter(m => !existingMatchIds.has(m.id));
+              const newMatches = polledGroup.matches.filter(m => !existingMatchIds.has(m.id));
 
-              mergedGroups.set(newGroup.league.id, {
+              mergedGroups.set(polledGroup.league.id, {
                 ...existingGroup,
-                matches: [...updatedMatches, ...newMatches],
-                totalMatches: updatedMatches.length + newMatches.length,
-                hasLiveMatches: existingGroup.hasLiveMatches || newGroup.hasLiveMatches,
-                hasUpcomingMatches: existingGroup.hasUpcomingMatches || newGroup.hasUpcomingMatches,
+                matches: [...newMatches, ...updatedMatches], // New matches first, then updated existing
+                totalMatches: newMatches.length + updatedMatches.length,
+                hasLiveMatches: existingGroup.hasLiveMatches || polledGroup.hasLiveMatches,
+                hasUpcomingMatches:
+                  existingGroup.hasUpcomingMatches || polledGroup.hasUpcomingMatches,
               });
-            } else if (newGroup.matches.length > 0) {
-              mergedGroups.set(newGroup.league.id, newGroup);
+            } else if (polledGroup.matches.length > 0) {
+              mergedGroups.set(polledGroup.league.id, polledGroup);
             }
           });
 
@@ -121,7 +121,7 @@ export function useGroupedFixtures({
         setTotalLoadedMatches(incomingTotalMatches);
       }
     }
-  }, [fixturesData, offset, totalLoadedMatches]);
+  }, [fixturesData, offset, totalLoadedMatches, groupedMatches.length]);
 
   const isPollingActive = useRef(false);
 

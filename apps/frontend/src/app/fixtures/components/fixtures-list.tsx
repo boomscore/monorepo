@@ -3,11 +3,8 @@
 import React from 'react';
 import { gql } from '@apollo/client';
 import { FixtureCard } from './fixture-card';
-import type { GetGroupedFixturesQuery } from '@/gql/graphql';
-import { Skeleton } from '@/components';
+import { Button, Skeleton } from '@/components';
 import { useGroupedFixtures, useInfiniteScroll } from '../hooks';
-
-type LeagueGroup = GetGroupedFixturesQuery['matchesGroupedByLeague']['groups'][0];
 
 export const GET_GROUPED_FIXTURES = gql`
   query GetGroupedFixtures(
@@ -126,19 +123,14 @@ export const FixturesList: React.FC<FixturesListProps> = ({
     return (
       <div className="text-center py-8">
         <p className="text-red-500 mb-4">Error loading fixtures</p>
-        <button
-          onClick={() => refetch()}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Retry
-        </button>
+        <Button onClick={() => refetch()}>Retry</Button>
       </div>
     );
   }
 
   if (groupedMatches.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">No fixtures found for the selected date.</div>
+      <p className="text-center py-8 text-text-grey">No fixtures found for the selected date.</p>
     );
   }
 
@@ -146,8 +138,9 @@ export const FixturesList: React.FC<FixturesListProps> = ({
     <div className="space-y-6">
       {groupedMatches.map(({ league, matches: leagueMatches }, groupIndex) => (
         <div key={league.id} className="space-y-3">
-          <div className="flex items-center gap-3 pb-2">
+          <div>
             <h3 className="font-medium text-base">{league.displayName || league.name}</h3>
+            <p>{league.country}</p>
           </div>
 
           <div className="grid gap-3">

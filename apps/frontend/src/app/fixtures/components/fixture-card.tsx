@@ -2,6 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import type { GetGroupedFixturesQuery } from '@/gql/graphql';
+import { MatchStatus } from '@/gql/graphql';
 
 type Match = GetGroupedFixturesQuery['matchesGroupedByLeague']['groups'][0]['matches'][0];
 
@@ -12,18 +13,118 @@ interface FixtureCardProps {
 export const FixtureCard: React.FC<FixtureCardProps> = ({ match }) => {
   const homeTeam = match.homeTeam;
   const awayTeam = match.awayTeam;
-  const homeScore = match.homeScore;
-  const awayScore = match.awayScore;
+  const homeScore = match.homeScore ?? null;
+  const awayScore = match.awayScore ?? null;
+  const homePenaltyScore = match.homePenaltyScore ?? null;
+  const awayPenaltyScore = match.awayPenaltyScore ?? null;
+  const homeExtraTimeScore = match.homeExtraTimeScore ?? null;
+  const awayExtraTimeScore = match.awayExtraTimeScore ?? null;
   const isLive = match.isLive;
   const status = match.status;
   const isFinished = match.isFinished;
   const hasStarted = match.hasStarted;
+  const minute = match.minute;
+
+  const hasPenalties = () => {
+    return (
+      homePenaltyScore !== null &&
+      awayPenaltyScore !== null &&
+      (homePenaltyScore! > 0 || awayPenaltyScore! > 0)
+    );
+  };
+
+  const hasExtraTime = () => {
+    return (
+      homeExtraTimeScore !== null &&
+      awayExtraTimeScore !== null &&
+      (homeExtraTimeScore! > 0 || awayExtraTimeScore! > 0)
+    );
+  };
+
+  const isActuallyFinished = () => {
+    return (
+      hasPenalties() ||
+      hasExtraTime() ||
+      isFinished ||
+      status === MatchStatus.Finished ||
+      (hasStarted &&
+        homeScore !== null &&
+        awayScore !== null &&
+        (homeScore > 0 || awayScore > 0 || isFinished) &&
+        !isLive &&
+        status !== MatchStatus.Halftime)
+    );
+  };
+
+  const getMatchStatus = () => {
+    if (hasPenalties()) {
+      return 'FULL TIME (PEN)';
+    }
+
+    if (hasExtraTime()) {
+      return 'FULL TIME (AET)';
+    }
+
+    if (isActuallyFinished()) {
+      return 'FULL TIME';
+    }
+
+    if (isLive && minute) {
+      return `LIVE (${minute}')`;
+    }
+
+    if (isLive && !minute) {
+      return 'LIVE';
+    }
+
+    if (status === MatchStatus.Halftime) {
+      return minute ? `HALF TIME (${minute}')` : 'HALF TIME';
+    }
+
+    if (status === MatchStatus.Scheduled || (!hasStarted && !isLive && !isFinished)) {
+      if (match.startTime) {
+        const startTime = new Date(match.startTime);
+        const timeString = startTime.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        });
+        return `PLAYS TODAY AT ${timeString}`;
+      }
+      return 'SCHEDULED';
+    }
+
+    if (status === MatchStatus.Postponed) return 'POSTPONED';
+    if (status === MatchStatus.Cancelled) return 'CANCELLED';
+    if (status === MatchStatus.Suspended) return 'SUSPENDED';
+
+    return status?.toUpperCase?.() || status;
+  };
+
+  const getWinner = () => {
+    if (hasPenalties()) {
+      if (homePenaltyScore! > awayPenaltyScore!) return 'home';
+      if (awayPenaltyScore! > homePenaltyScore!) return 'away';
+      return null;
+    }
+
+    if (!isActuallyFinished()) return null;
+
+    const finalHomeScore = homeScore ?? 0;
+    const finalAwayScore = awayScore ?? 0;
+
+    if (finalHomeScore === finalAwayScore) return null;
+    return finalHomeScore > finalAwayScore ? 'home' : 'away';
+  };
+
+  const winner = getWinner();
+  const matchStatus = getMatchStatus();
 
   return (
-    <div className="border border-border rounded-xl p-1">
+    <div className="border border-border rounded-xl p-1 text-text-grey">
       <div className="p-2 flex items-center gap-2">
         <span className={cn('w-1 h-4 rounded-sm', isLive ? 'bg-primary' : 'bg-app-background')} />
-        <p className="">{status}</p>
+        <p>{matchStatus}</p>
       </div>
 
       <div className="bg-app-background rounded-xl p-4">
@@ -42,14 +143,20 @@ export const FixtureCard: React.FC<FixtureCardProps> = ({ match }) => {
                   />
                 </div>
               )}
-              <span className="font-medium text-xs truncate">{match.homeTeam.name}</span>
+              <span className=" text-xs truncate">{homeTeam.name}</span>
             </div>
-            <span className="text-xs font-medium min-w-[20px] text-center">
-              {isFinished || hasStarted ? (homeScore ?? 0) : '-'}
-            </span>
+            <div className="flex gap-1 items-center min-w-[20px] justify-end">
+              <span className={cn('text-xs', winner === 'home' && 'text-foreground')}>
+                {isActuallyFinished() || hasStarted || isLive ? (homeScore ?? 0) : '-'}
+              </span>
+              {hasPenalties() && (
+                <span className={cn('text-xs', winner === 'home' && 'text-foreground')}>
+                  ({homePenaltyScore})
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Away Team */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 flex-1">
               {awayTeam.logo && (
@@ -64,11 +171,18 @@ export const FixtureCard: React.FC<FixtureCardProps> = ({ match }) => {
                   />
                 </div>
               )}
-              <span className="font-medium text-xs truncate">{awayTeam.name}</span>
+              <span className="text-xs truncate">{awayTeam.name}</span>
             </div>
-            <span className="text-xs font-medium min-w-[20px] text-center">
-              {isFinished || hasStarted ? (awayScore ?? 0) : '-'}
-            </span>
+            <div className="flex gap-1 items-center min-w-[20px] justify-end">
+              <span className={cn('text-xs text-center', winner === 'away' && 'text-foreground')}>
+                {isActuallyFinished() || hasStarted || isLive ? (awayScore ?? 0) : '-'}
+              </span>
+              {hasPenalties() && (
+                <span className={cn('text-xs text-center', winner === 'away' && 'text-foreground')}>
+                  ({awayPenaltyScore})
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
