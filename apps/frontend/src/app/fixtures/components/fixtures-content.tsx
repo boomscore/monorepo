@@ -4,8 +4,11 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { FixturesList } from './fixtures-list';
 import { Button, Separator, Skeleton } from '@/components';
-import { FixtureSportType } from './fixtures-sport-type';
+
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
+import { FixtureGames } from './fixture-game';
+import { FixtureSportType } from './fixtures-sport-type';
+import { FixtureSportTypeTabs } from './fixtures-sport-type-tab';
 
 export const FixturesContent = () => {
   const searchParams = useSearchParams();
@@ -91,12 +94,13 @@ export const FixturesContent = () => {
   }
 
   return (
-    <div className="flex-1 max-w-3xl mx-auto">
+    <div className="flex-1 ">
       <div className="p-4">
-        <FixtureSportType />
+        {/* <FixtureSportType /> */}
+        <FixtureSportTypeTabs />
       </div>
       <Separator />
-      <div className="p-4 flex gap-4 justify-between items-center">
+      {/* <div className="p-4 flex gap-4 justify-between items-center">
         <h1 className="text-3xl font-bold mb-2">Fixtures</h1>
 
         <div className="flex items-center gap-4">
@@ -120,7 +124,15 @@ export const FixturesContent = () => {
             <ArrowRightIcon />
           </Button>
         </div>
+      </div> */}
+      <div className="p-4 ">
+        <FixtureGames
+          today={selectedDate}
+          navigateDate={navigateDate}
+          onDateChange={handleDateChange}
+        />
       </div>
+
       <Separator />
 
       <div className="p-4">
