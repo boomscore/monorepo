@@ -13,14 +13,14 @@ export interface SportConfig {
 
 export const SPORT_CONFIGS: Record<SportType, SportConfig> = {
   [SportType.FOOTBALL]: {
-    name: 'Football',
+    name: '⚽Football',
     slug: 'football',
     description: 'Association football (soccer)',
     apiId: 1,
     isActive: true,
   },
   [SportType.BASKETBALL]: {
-    name: 'Basketball',
+    name: '🏀Basketball',
     slug: 'basketball',
     description: 'Professional basketball',
     apiId: 2,
