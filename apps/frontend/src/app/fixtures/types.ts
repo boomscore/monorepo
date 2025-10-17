@@ -39,5 +39,14 @@ export interface Match {
 export interface LeagueGroup {
   league: League;
   matches: Match[];
+  totalMatches: number;
+  hasLiveMatches: boolean;
+  hasUpcomingMatches: boolean;
 }
 
+export interface GroupedMatchesResult {
+  groups: LeagueGroup[];
+  totalMatches: number;
+  totalGroups: number;
+  hasMore: boolean;
+}
