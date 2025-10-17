@@ -64,7 +64,7 @@ export const FixtureGames = ({ navigateDate, today, onDateChange }: FixtureGames
 
       <div className="flex items-center gap-4">
         {!isMobile && (
-          <div className="flex items-center gap-2 bg-base-black rounded-full px-3 py-2 shadow-sm border">
+          <div className="flex items-center gap-2 bg-base-black rounded-full px-3 py-2 shadow-sm border border-grey-950">
             <Button
               size="icon"
               onClick={() => navigateDate('prev')}
