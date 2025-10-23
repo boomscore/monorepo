@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { useQuery, gql } from '@apollo/client';
-import { Skeleton } from '@/components';
+import { Card, CardContent, Separator, Skeleton } from '@/components';
+import Image from 'next/image';
 interface StandingTeam {
   teamName: string;
   position: number;
@@ -23,6 +24,8 @@ interface CompactStandingsProps {
   homeTeamName: string;
   awayTeamName: string;
   season?: number;
+  homeTeamLogo: string;
+  awayTeamLogo: string;
 }
 
 export const CompactStandings: React.FC<CompactStandingsProps> = ({
@@ -32,6 +35,8 @@ export const CompactStandings: React.FC<CompactStandingsProps> = ({
   homeTeamName,
   awayTeamName,
   season,
+  homeTeamLogo,
+  awayTeamLogo,
 }) => {
   const { data, loading, error } = useQuery(GET_LEAGUE_STANDINGS, {
     variables: { leagueId, season, limit: 25 },
@@ -39,8 +44,7 @@ export const CompactStandings: React.FC<CompactStandingsProps> = ({
 
   if (loading) {
     return (
-      <div className="space-y-2">
-        <h3 className="font-semibold text-base mb-4">Standings</h3>
+      <div>
         <Skeleton className="h-16 w-full" />
       </div>
     );
@@ -48,8 +52,7 @@ export const CompactStandings: React.FC<CompactStandingsProps> = ({
 
   if (error || !data?.leagueStandings) {
     return (
-      <div className="text-center py-4 text-gray-500">
-        <h3 className="font-semibold text-base mb-4">Standings</h3>
+      <div className="text-center py-4">
         <p>Standings not available</p>
       </div>
     );
@@ -67,7 +70,6 @@ export const CompactStandings: React.FC<CompactStandingsProps> = ({
   if (!homeTeamData && !awayTeamData) {
     return (
       <div className="text-center py-4 text-gray-500">
-        <h3 className="font-semibold text-base mb-4">Standings</h3>
         <p>Team standings not found</p>
         <div className="text-xs mt-2 text-gray-400">
           Looking for: {homeTeamId} & {awayTeamId}
@@ -77,55 +79,69 @@ export const CompactStandings: React.FC<CompactStandingsProps> = ({
   }
 
   return (
-    <div>
-      <h3 className="font-semibold text-base mb-4">Standings</h3>
+    <div className="flex flex-col md:flex-row gap-2">
+      <Card className="flex-1 bg-app-background border-none">
+        <CardContent>
+          <div>
+            <div className="flex items-center gap-2">
+              <Image
+                src={homeTeamLogo}
+                alt={homeTeamName}
+                width={16}
+                height={16}
+                className="object-contain"
+              />
+              <div className="font-medium text-sm">{homeTeamName}</div>
+            </div>
 
-      <div className="space-y-3">
-        {homeTeamData && (
-          <div className="flex items-center justify-between">
-            <div className="font-medium text-sm">{homeTeamName}</div>
-            <div className="flex items-center gap-6 text-sm">
-              <div>
-                <span className="text-gray-600">Rank</span>
-                <div className="font-bold">{homeTeamData.position}</div>
+            <div className="border border-border rounded-lg flex items-center justify-between mt-2">
+              <div className="p-4 text-center">
+                <p>Rank</p>
+                <p className="font-medium text-sm">{homeTeamData.position}</p>
               </div>
-              <div>
-                <span className="text-gray-600">Pts</span>
-                <div className="font-bold">{homeTeamData.points}</div>
+
+              <div className="p-4 text-center border-x border-border">
+                <p>Points</p>
+                <p className="font-medium text-sm">{homeTeamData.points}</p>
               </div>
-              {homeTeamData.form && (
-                <div>
-                  <span className="text-gray-600">Form</span>
-                  <div className="font-mono text-xs font-bold">{homeTeamData.form}</div>
-                </div>
-              )}
+              <div className="p-4 text-center">
+                <p>Form</p>
+                <p className="font-medium text-sm">{homeTeamData.form}</p>
+              </div>
             </div>
           </div>
-        )}
-
-        {/* Away Team */}
-        {awayTeamData && (
-          <div className="flex items-center justify-between">
-            <div className="font-medium text-sm">{awayTeamName}</div>
-            <div className="flex items-center gap-6 text-sm">
-              <div>
-                <span className="text-gray-600">Rank</span>
-                <div className="font-bold">{awayTeamData.position}</div>
+        </CardContent>
+      </Card>
+      <Card className="flex-1 bg-app-background border-none">
+        <CardContent>
+          <div>
+            <div className="flex items-center gap-2">
+              <Image
+                src={awayTeamLogo}
+                alt={awayTeamName}
+                width={16}
+                height={16}
+                className="object-contain"
+              />
+              <div className="font-medium text-sm">{awayTeamName}</div>
+            </div>
+            <div className="border border-border rounded-lg flex items-center justify-between mt-2">
+              <div className="p-4 text-center">
+                <p>Rank</p>
+                <p className="font-medium text-sm">{awayTeamData.position}</p>
               </div>
-              <div>
-                <span className="text-gray-600">Pts</span>
-                <div className="font-bold">{awayTeamData.points}</div>
+              <div className="p-4 text-center border-x border-border">
+                <p>Points</p>
+                <p className="font-medium text-sm">{awayTeamData.points}</p>
               </div>
-              {awayTeamData.form && (
-                <div>
-                  <span className="text-gray-600">Form</span>
-                  <div className="font-mono text-xs font-bold">{awayTeamData.form}</div>
-                </div>
-              )}
+              <div className="p-4 text-center">
+                <p>Form</p>
+                <p className="font-medium text-sm">{awayTeamData.form}</p>
+              </div>
             </div>
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -29,6 +29,7 @@ interface NestedCardsProps extends NestedCardsVariants {
   header: ReactNode;
   footer: ReactNode;
   className?: string;
+  bottomCardClassName?: string;
 }
 
 export const NestedCards = ({
@@ -37,11 +38,15 @@ export const NestedCards = ({
   direction,
   padding,
   className,
+  bottomCardClassName,
 }: NestedCardsProps) => {
   return (
     <Card className={cn(nestedCardsVariants({ direction, padding }), ' gap-0', className)}>
       <CardContent className="p-2">{header}</CardContent>
-      <Card className="bg-app-background p-0 border-none" variant="secondary">
+      <Card
+        className={cn('bg-app-background p-0 border-none', bottomCardClassName)}
+        variant="secondary"
+      >
         <CardContent className="p-2">{footer}</CardContent>
       </Card>
     </Card>

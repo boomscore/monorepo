@@ -16,10 +16,12 @@ const GET_MATCH_FOR_DETAILS = gql`
       homeTeam {
         id
         name
+        logo
       }
       awayTeam {
         id
         name
+        logo
       }
       league {
         id
@@ -58,39 +60,53 @@ export const FixtureContent = () => {
 
   return (
     <div className="space-y-6">
-      {/* Match Header */}
-      <NestedCards header={<FixtureDetailsHeader />} footer={<div />} padding="none" />
+      <NestedCards
+        header={<div />}
+        footer={<FixtureDetailsHeader />}
+        padding="none"
+        direction="reverse"
+      />
 
-      {/* Compact Standings */}
       <NestedCards
         header={
+          <div className="p-2">
+            <h3 className="font-semibold text-sm">Standings</h3>
+          </div>
+        }
+        footer={
           <CompactStandings
             leagueId={match.league.id}
             homeTeamId={match.homeTeam.id}
             awayTeamId={match.awayTeam.id}
             homeTeamName={match.homeTeam.name}
             awayTeamName={match.awayTeam.name}
+            homeTeamLogo={match.homeTeam.logo}
+            awayTeamLogo={match.awayTeam.logo}
           />
         }
-        footer={<div />}
-        padding="sm"
+        padding="px"
+        bottomCardClassName="bg-transparent border-none"
       />
 
-      {/* Head to Head */}
       <NestedCards
         header={
+          <div className="p-2">
+            <h3 className="font-semibold text-sm">Head to Head</h3>
+          </div>
+        }
+        footer={
           <HeadToHead
             homeTeamId={match.homeTeam.id}
             awayTeamId={match.awayTeam.id}
             homeTeamName={match.homeTeam.name}
             awayTeamName={match.awayTeam.name}
+            homeTeamLogo={match.homeTeam.logo}
+            awayTeamLogo={match.awayTeam.logo}
           />
         }
-        footer={<div />}
-        padding="sm"
+        padding="px"
       />
 
-      {/* Recent & Upcoming */}
       <NestedCards
         header={
           <RecentUpcoming
