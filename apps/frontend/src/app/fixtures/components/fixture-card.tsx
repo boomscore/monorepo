@@ -4,14 +4,16 @@ import { cn } from '@/lib/utils';
 import type { GetGroupedFixturesQuery } from '@/gql/graphql';
 import { MatchStatus } from '@/gql/graphql';
 import Link from 'next/link';
+import { format } from 'date-fns';
 
 type Match = GetGroupedFixturesQuery['matchesGroupedByLeague']['groups'][0]['matches'][0];
 
 interface FixtureCardProps {
   match: Match;
+  showDate?: boolean; // When true, shows date/time instead of match status
 }
 
-export const FixtureCard: React.FC<FixtureCardProps> = ({ match }) => {
+export const FixtureCard: React.FC<FixtureCardProps> = ({ match, showDate = false }) => {
   const homeTeam = match.homeTeam;
   const awayTeam = match.awayTeam;
   const homeScore = match.homeScore ?? null;
@@ -58,6 +60,11 @@ export const FixtureCard: React.FC<FixtureCardProps> = ({ match }) => {
   };
 
   const getMatchStatus = () => {
+    if (showDate && isActuallyFinished() && match.startTime) {
+      const matchDate = new Date(match.startTime);
+      return format(matchDate, 'dd MMM HH:mm');
+    }
+
     if (hasPenalties()) {
       return 'FULL TIME (PEN)';
     }
@@ -124,7 +131,7 @@ export const FixtureCard: React.FC<FixtureCardProps> = ({ match }) => {
   return (
     <Link
       href={`/fixtures/${match.id}`}
-      className="outline-primary border border-border rounded-xl overflow-hidden p-1 text-text-grey cursor-pointer  block"
+      className="outline-primary border border-border rounded-xl overflow-hidden p-1 text-text-grey cursor-pointer  block bg-background"
     >
       <div>
         <div className="p-2 flex items-center gap-2">

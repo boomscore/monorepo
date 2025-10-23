@@ -2,18 +2,9 @@
 
 import React from 'react';
 import { useQuery, gql } from '@apollo/client';
-import { Card, Skeleton } from '@/components';
+import { Card, Separator, Skeleton } from '@/components';
 import Image from 'next/image';
-// Define local types for H2H data structure
-interface HeadToHeadMatch {
-  id: string;
-  homeTeam: { id: string; name: string; logo?: string };
-  awayTeam: { id: string; name: string; logo?: string };
-  homeScore: number;
-  awayScore: number;
-  startTime: string;
-  league: { name: string };
-}
+import { FixtureCard } from '../../components/fixture-card';
 
 const GET_HEAD_TO_HEAD_STATS = gql`
   query GetHeadToHeadStats($homeTeamId: String!, $awayTeamId: String!) {
@@ -43,7 +34,16 @@ const GET_HEAD_TO_HEAD_STATS = gql`
         }
         homeScore
         awayScore
+        homePenaltyScore
+        awayPenaltyScore
+        homeExtraTimeScore
+        awayExtraTimeScore
         startTime
+        isLive
+        isFinished
+        hasStarted
+        status
+        minute
         league {
           name
         }
@@ -274,8 +274,8 @@ export const HeadToHead: React.FC<HeadToHeadProps> = ({
     //   )}
     // </div>
 
-    <section>
-      <div className="flex items-center justify-between text-text-grey ">
+    <section className="space-y-6">
+      <div className="flex items-center justify-between text-text-grey p-3">
         <div className="flex items-center gap-2">
           <Image
             src={homeTeamLogo}
@@ -301,13 +301,46 @@ export const HeadToHead: React.FC<HeadToHeadProps> = ({
         </div>
       </div>
 
-
-
-      <Card padding="none">
-        <div className=""></div>
-
-
+      <Card padding="none" className="p-0">
+        <div className="grid grid-cols-3">
+          <div className="p-3 text-center">
+            <p className="text-text-grey">Home</p>
+            <p className="text-sm font-medium">{stats.homeWins}</p>
+          </div>
+          <div className="border-x border-border p-3 text-center">
+            <p className="text-text-grey">Draw</p>
+            <p className="text-sm font-medium">{stats.draws}</p>
+          </div>
+          <div className="p-3 text-center">
+            <p className="text-text-grey">Away</p>
+            <p className="text-sm font-medium">{stats.awayWins}</p>
+          </div>
+        </div>
       </Card>
+
+      <Separator />
+
+      {matches.length > 0 && (
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-sm font-medium mb-2 px-3">Latest meeting</h3>
+            <FixtureCard match={matches[0]} showDate={true} />
+          </div>
+
+          <Separator />
+
+          {matches.length > 1 && (
+            <div>
+              <h3 className="text-sm font-medium mb-2 px-3">Previous meetings</h3>
+              <div className="space-y-2">
+                {matches.slice(1, 6).map((match: any) => (
+                  <FixtureCard key={match.id} match={match} showDate={true} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 };

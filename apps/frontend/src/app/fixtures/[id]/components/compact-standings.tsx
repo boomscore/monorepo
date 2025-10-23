@@ -94,7 +94,7 @@ export const CompactStandings: React.FC<CompactStandingsProps> = ({
               <div className="font-medium text-sm">{homeTeamName}</div>
             </div>
 
-            <div className="border border-border rounded-lg flex items-center justify-between mt-2">
+            <div className="border border-border rounded-lg grid grid-cols-3 mt-2">
               <div className="p-4 text-center">
                 <p>Rank</p>
                 <p className="font-medium text-sm">{homeTeamData.position}</p>
@@ -125,7 +125,7 @@ export const CompactStandings: React.FC<CompactStandingsProps> = ({
               />
               <div className="font-medium text-sm">{awayTeamName}</div>
             </div>
-            <div className="border border-border rounded-lg flex items-center justify-between mt-2">
+            <div className="border border-border rounded-lg grid grid-cols-3 mt-2">
               <div className="p-4 text-center">
                 <p>Rank</p>
                 <p className="font-medium text-sm">{awayTeamData.position}</p>
