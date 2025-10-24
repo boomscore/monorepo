@@ -96,17 +96,17 @@ export const CompactStandings: React.FC<CompactStandingsProps> = ({
 
             <div className="border border-border rounded-lg grid grid-cols-3 mt-2">
               <div className="p-4 text-center">
-                <p>Rank</p>
+                <p className="text-text-grey">Rank</p>
                 <p className="font-medium text-sm">{homeTeamData.position}</p>
               </div>
 
               <div className="p-4 text-center border-x border-border">
-                <p>Points</p>
+                <p className="text-text-grey">Points</p>
                 <p className="font-medium text-sm">{homeTeamData.points}</p>
               </div>
               <div className="p-4 text-center">
-                <p>Form</p>
-                <p className="font-medium text-sm">{homeTeamData.form}</p>
+                <p className="text-text-grey">Form</p>
+                <p className="font-medium text-sm">{homeTeamData.form || '-'}</p>
               </div>
             </div>
           </div>
@@ -127,16 +127,16 @@ export const CompactStandings: React.FC<CompactStandingsProps> = ({
             </div>
             <div className="border border-border rounded-lg grid grid-cols-3 mt-2">
               <div className="p-4 text-center">
-                <p>Rank</p>
+                <p className="text-text-grey">Rank</p>
                 <p className="font-medium text-sm">{awayTeamData.position}</p>
               </div>
               <div className="p-4 text-center border-x border-border">
-                <p>Points</p>
+                <p className="text-text-grey">Points</p>
                 <p className="font-medium text-sm">{awayTeamData.points}</p>
               </div>
               <div className="p-4 text-center">
-                <p>Form</p>
-                <p className="font-medium text-sm">{awayTeamData.form}</p>
+                <p className="text-text-grey">Form</p>
+                <p className="font-medium text-sm">{awayTeamData.form || '-'}</p>
               </div>
             </div>
           </div>

@@ -109,15 +109,21 @@ export const FixtureContent = () => {
 
       <NestedCards
         header={
+          <div className="p-2">
+            <h3 className="font-semibold text-sm">Recent and upcoming fixtures</h3>
+          </div>
+        }
+        footer={
           <RecentUpcoming
             homeTeamId={match.homeTeam.id}
             awayTeamId={match.awayTeam.id}
             homeTeamName={match.homeTeam.name}
             awayTeamName={match.awayTeam.name}
+            homeTeamLogo={match.homeTeam.logo}
+            awayTeamLogo={match.awayTeam.logo}
           />
         }
-        footer={<div />}
-        padding="sm"
+        padding="px"
       />
     </div>
   );

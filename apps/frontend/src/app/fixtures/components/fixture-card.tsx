@@ -60,7 +60,7 @@ export const FixtureCard: React.FC<FixtureCardProps> = ({ match, showDate = fals
   };
 
   const getMatchStatus = () => {
-    if (showDate && isActuallyFinished() && match.startTime) {
+    if (showDate && match.startTime) {
       const matchDate = new Date(match.startTime);
       return format(matchDate, 'dd MMM HH:mm');
     }
