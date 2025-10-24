@@ -2,7 +2,7 @@ import { Resolver, Query, Args } from '@nestjs/graphql';
 import { MatchesService, MatchFilters } from '../services/matches.service';
 import { Match } from '../entities/match.entity';
 import { MatchEvent } from '../entities/match-event.entity';
-import { GroupedMatchesResult } from '../dto/league-group.dto';
+import { GroupedMatchesResult, HeadToHeadStats } from '../dto/league-group.dto';
 
 @Resolver(() => Match)
 export class MatchesResolver {
@@ -30,6 +30,44 @@ export class MatchesResolver {
     return this.matchesService.findMatches(filters);
   }
 
+  @Query(() => Match, { nullable: true })
+  async match(@Args('id') id: string): Promise<Match | null> {
+    return this.matchesService.findById(id);
+  }
+
+  @Query(() => [Match])
+  async headToHeadMatches(
+    @Args('homeTeamId') homeTeamId: string,
+    @Args('awayTeamId') awayTeamId: string,
+    @Args('limit', { nullable: true }) limit?: number,
+  ): Promise<Match[]> {
+    return this.matchesService.findHeadToHeadMatches(homeTeamId, awayTeamId, limit || 10);
+  }
+
+  @Query(() => HeadToHeadStats)
+  async headToHeadStats(
+    @Args('homeTeamId') homeTeamId: string,
+    @Args('awayTeamId') awayTeamId: string,
+  ): Promise<HeadToHeadStats> {
+    return this.matchesService.findHeadToHeadStats(homeTeamId, awayTeamId);
+  }
+
+  @Query(() => [Match])
+  async teamRecentMatches(
+    @Args('teamId') teamId: string,
+    @Args('limit', { nullable: true }) limit?: number,
+  ): Promise<Match[]> {
+    return this.matchesService.findTeamRecentMatches(teamId, limit || 5);
+  }
+
+  @Query(() => [Match])
+  async teamUpcomingMatches(
+    @Args('teamId') teamId: string,
+    @Args('limit', { nullable: true }) limit?: number,
+  ): Promise<Match[]> {
+    return this.matchesService.findTeamUpcomingMatches(teamId, limit || 5);
+  }
+
   @Query(() => GroupedMatchesResult)
   async matchesGroupedByLeague(
     @Args('date', { nullable: true }) date?: string,
@@ -50,11 +88,6 @@ export class MatchesResolver {
     if (offset) filters.offset = offset;
 
     return this.matchesService.findMatchesGroupedByLeague(filters);
-  }
-
-  @Query(() => Match, { nullable: true })
-  async match(@Args('id') id: string): Promise<Match> {
-    return this.matchesService.findById(id);
   }
 
   @Query(() => [Match])

@@ -3,11 +3,9 @@
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { FixturesList } from './fixtures-list';
-import { Button, Separator, Skeleton } from '@/components';
+import { Separator, Skeleton } from '@/components';
 
-import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 import { FixtureGames } from './fixture-game';
-import { FixtureSportType } from './fixtures-sport-type';
 import { FixtureSportTypeTabs } from './fixtures-sport-type-tab';
 
 export const FixturesContent = () => {
@@ -57,30 +55,6 @@ export const FixturesContent = () => {
     updateDateInUrl(date);
   };
 
-  const formatDisplayDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-
-    const dateOnly = dateString;
-    const todayString = today.toISOString().split('T')[0];
-    const yesterdayString = yesterday.toISOString().split('T')[0];
-    const tomorrowString = tomorrow.toISOString().split('T')[0];
-
-    if (dateOnly === todayString) return 'Today';
-    if (dateOnly === yesterdayString) return 'Yesterday';
-    if (dateOnly === tomorrowString) return 'Tomorrow';
-
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
   if (!selectedDate) {
     return (
       <div className="p-4">
@@ -95,37 +69,12 @@ export const FixturesContent = () => {
 
   return (
     <div className="flex-1 ">
-      <div className="p-4">
-        {/* <FixtureSportType /> */}
+      <div className="p-2 px-4">
         <FixtureSportTypeTabs />
       </div>
       <Separator />
-      {/* <div className="p-4 flex gap-4 justify-between items-center">
-        <h1 className="text-3xl font-bold mb-2">Fixtures</h1>
 
-        <div className="flex items-center gap-4">
-          <Button onClick={() => navigateDate('prev')} variant="ghost">
-            <ArrowLeftIcon />
-          </Button>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={e => handleDateChange(e.target.value)}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <span className="text-sm text-gray-600 font-medium">
-              {formatDisplayDate(selectedDate)}
-            </span>
-          </div>
-
-          <Button onClick={() => navigateDate('next')} variant="ghost">
-            <ArrowRightIcon />
-          </Button>
-        </div>
-      </div> */}
-      <div className="p-4 ">
+      <div className="p-2 px-4 ">
         <FixtureGames
           today={selectedDate}
           navigateDate={navigateDate}

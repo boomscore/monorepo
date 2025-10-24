@@ -13,7 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components';
-import {  ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { useMobile } from '@/lib/utils';
 
@@ -27,7 +27,6 @@ type FixtureGamesProps = {
 export const FixtureGames = ({ navigateDate, today, onDateChange }: FixtureGamesProps) => {
   const [date, setDate] = useState<Date>(new Date(today));
   const isMobile = useMobile();
-
 
   useEffect(() => {
     setDate(new Date(today));
@@ -48,7 +47,7 @@ export const FixtureGames = ({ navigateDate, today, onDateChange }: FixtureGames
   return (
     <div className="flex items-center justify-between mt-4">
       <div>
-        <h1 className="text-2xl font-semibold">Fixtures</h1>
+        <h4 className="text-lg font-semibold">Fixtures</h4>
         <div className="mt-2 w-[100px]">
           <Select defaultValue={today} name="fixture-date">
             <SelectTrigger size="sm">
@@ -64,22 +63,19 @@ export const FixtureGames = ({ navigateDate, today, onDateChange }: FixtureGames
 
       <div className="flex items-center gap-4">
         {!isMobile && (
-          <div className="flex items-center gap-2 bg-base-black rounded-full px-3 py-2 shadow-sm border border-grey-950">
+          <div className="flex items-center gap-2 rounded-full p-2 border border-border">
             <Button
               size="icon"
+              variant="ghost"
               onClick={() => navigateDate('prev')}
-              className="rounded-full bg-grey-500"
+              className="rounded-full bg-card"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            {/* Popover Calendar */}
             <Popover>
               <PopoverTrigger asChild>
-                <Button
-                  className="text-gray-700 font-medium bg-grey-500 rounded-full"
-                  onClick={goToday}
-                >
+                <Button className="bg-card text-foreground" onClick={goToday}>
                   {date.toDateString() === new Date().toDateString()
                     ? 'Today'
                     : format(date, 'MMM d, yyyy')}
@@ -92,16 +88,16 @@ export const FixtureGames = ({ navigateDate, today, onDateChange }: FixtureGames
 
             <Button
               size="icon"
+              variant="ghost"
               onClick={() => navigateDate('next')}
-              className="rounded-full bg-grey-500"
+              className="rounded-full bg-card"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         )}
-        {/* Right side: search icon */}
-        <Button variant="ghost" size="icon" className="rounded-full bg-grey-500">
-          <Search className="h-5 w-5 text-gray-700" />
+        <Button variant="ghost" className="rounded-full bg-card" size="lg">
+          <Search />
         </Button>
       </div>
     </div>

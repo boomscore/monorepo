@@ -73,6 +73,7 @@ export class Team {
   venueImage?: string;
 
   @Column({ length: 50, unique: true })
+  @Field()
   apiId: string;
 
   @Column({ type: 'int', nullable: true })
@@ -171,7 +172,7 @@ export class Team {
   @Field({ nullable: true })
   get currentForm(): string | null {
     if (!this.form || this.form.length === 0) return null;
-    return this.form.slice(-5).join(''); 
+    return this.form.slice(-5).join('');
   }
 
   @Field()

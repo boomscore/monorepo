@@ -1,4 +1,4 @@
-import { ObjectType, Field, Int } from '@nestjs/graphql';
+import { ObjectType, Field, Int, Float } from '@nestjs/graphql';
 import { League } from '../entities/league.entity';
 import { Match } from '../entities/match.entity';
 
@@ -33,4 +33,43 @@ export class GroupedMatchesResult {
 
   @Field()
   hasMore: boolean;
+}
+
+@ObjectType()
+export class HeadToHeadStats {
+  @Field(() => Int)
+  totalMatches: number;
+
+  @Field(() => Int)
+  homeWins: number;
+
+  @Field(() => Int)
+  awayWins: number;
+
+  @Field(() => Int)
+  draws: number;
+
+  @Field(() => Int)
+  totalGoals: number;
+
+  @Field(() => Int)
+  homeGoals: number;
+
+  @Field(() => Int)
+  awayGoals: number;
+
+  @Field(() => Float)
+  homeWinPercent: number;
+
+  @Field(() => Float)
+  awayWinPercent: number;
+
+  @Field(() => Float)
+  drawPercent: number;
+
+  @Field(() => Float)
+  avgPointsPerGame: number;
+
+  @Field(() => [Match])
+  recentMatches: Match[];
 }

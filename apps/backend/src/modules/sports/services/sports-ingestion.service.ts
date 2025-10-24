@@ -627,6 +627,16 @@ export class SportsIngestionService {
       }
 
       await this.matchRepository.save(match);
+
+      if (
+        (match.status === MatchStatus.FINISHED ||
+          match.status === MatchStatus.LIVE ||
+          match.status === MatchStatus.HALFTIME) &&
+        apiMatch.fixture.id
+      ) {
+        await this.syncMatchStatistics(apiMatch.fixture.id, match.id);
+      }
+
       return match;
     } catch (error) {
       this.logger.error(`Failed to sync match ${apiMatch.fixture.id}:`, error);
@@ -722,6 +732,76 @@ export class SportsIngestionService {
     }
 
     return 50; // Default priority
+  }
+
+  private async syncMatchStatistics(fixtureApiId: number, matchId: string): Promise<void> {
+    try {
+      const apiStats = await this.sportsApiService.getMatchStatistics(fixtureApiId);
+
+      if (!apiStats || apiStats.length === 0) {
+        this.logger.debug(`No statistics available for match ${fixtureApiId}`);
+        return;
+      }
+
+      const homeTeamStats = apiStats[0];
+      const awayTeamStats = apiStats[1];
+
+      if (!homeTeamStats || !awayTeamStats) {
+        this.logger.debug(`Incomplete statistics data for match ${fixtureApiId}`);
+        return;
+      }
+
+      const parseStatistic = (stats: any[], type: string): number | null => {
+        const stat = stats.find((s: any) => s.type?.toLowerCase().includes(type.toLowerCase()));
+        return stat ? parseInt(stat.value) || null : null;
+      };
+
+      const parsePercentage = (stats: any[], type: string): number | null => {
+        const stat = stats.find((s: any) => s.type?.toLowerCase().includes(type.toLowerCase()));
+        return stat ? parseInt(stat.value?.replace('%', '')) || null : null;
+      };
+
+      const statistics = {
+        home: {
+          possession: parsePercentage(homeTeamStats.statistics, 'ball possession'),
+          shots: parseStatistic(homeTeamStats.statistics, 'total shots'),
+          shotsOnTarget: parseStatistic(homeTeamStats.statistics, 'shots on goal'),
+          shotsOffTarget: parseStatistic(homeTeamStats.statistics, 'shots off goal'),
+          blockedShots: parseStatistic(homeTeamStats.statistics, 'blocked shots'),
+          corners: parseStatistic(homeTeamStats.statistics, 'corner kicks'),
+          offsides: parseStatistic(homeTeamStats.statistics, 'offsides'),
+          fouls: parseStatistic(homeTeamStats.statistics, 'fouls'),
+          yellowCards: parseStatistic(homeTeamStats.statistics, 'yellow cards'),
+          redCards: parseStatistic(homeTeamStats.statistics, 'red cards'),
+          saves: parseStatistic(homeTeamStats.statistics, 'goalkeeper saves'),
+          totalPasses: parseStatistic(homeTeamStats.statistics, 'total passes'),
+          passesAccurate: parseStatistic(homeTeamStats.statistics, 'passes accurate'),
+          passAccuracy: parsePercentage(homeTeamStats.statistics, 'passes %'),
+        },
+        away: {
+          possession: parsePercentage(awayTeamStats.statistics, 'ball possession'),
+          shots: parseStatistic(awayTeamStats.statistics, 'total shots'),
+          shotsOnTarget: parseStatistic(awayTeamStats.statistics, 'shots on goal'),
+          shotsOffTarget: parseStatistic(awayTeamStats.statistics, 'shots off goal'),
+          blockedShots: parseStatistic(awayTeamStats.statistics, 'blocked shots'),
+          corners: parseStatistic(awayTeamStats.statistics, 'corner kicks'),
+          offsides: parseStatistic(awayTeamStats.statistics, 'offsides'),
+          fouls: parseStatistic(awayTeamStats.statistics, 'fouls'),
+          yellowCards: parseStatistic(awayTeamStats.statistics, 'yellow cards'),
+          redCards: parseStatistic(awayTeamStats.statistics, 'red cards'),
+          saves: parseStatistic(awayTeamStats.statistics, 'goalkeeper saves'),
+          totalPasses: parseStatistic(awayTeamStats.statistics, 'total passes'),
+          passesAccurate: parseStatistic(awayTeamStats.statistics, 'passes accurate'),
+          passAccuracy: parsePercentage(awayTeamStats.statistics, 'passes %'),
+        },
+      };
+
+      await this.matchRepository.update(matchId, { statistics });
+
+      this.logger.debug(`Statistics synced for match ${fixtureApiId}`);
+    } catch (error) {
+      this.logger.error(`Failed to sync statistics for match ${fixtureApiId}:`, error);
+    }
   }
 
   private mapMatchStatus(apiStatus: string): MatchStatus {

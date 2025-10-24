@@ -83,6 +83,7 @@ export class LeaguesService {
         losses: t.all?.lose ?? 0,
         goalDifference: t.goalsDiff ?? 0,
         points: t.points ?? 0,
+        form: t.form ?? null,
       }));
 
       return {

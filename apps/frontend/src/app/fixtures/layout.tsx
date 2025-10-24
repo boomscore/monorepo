@@ -13,10 +13,12 @@ export default function FixturesLayout({ children }: { children: React.ReactNode
   const isMobile = useMobile();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
- if (isMobile) {
-  return (
-    <div className="flex flex-col h-screen">
-      <div className="flex-1 overflow-hidden">{children}</div>
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-screen">
+        <div className="flex-1  w-full h-full overflow-y-auto ">{children}</div>
+
 
       <div>
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -50,7 +52,7 @@ export default function FixturesLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="flex h-[calc(100vh-64px)]">
-      <div className="max-w-[600px] w-full h-full overflow-y-auto scrollable">{children}</div>
+      <div className="max-w-[600px] w-full h-full overflow-y-auto no-scrollbar">{children}</div>
 
       <div className="border-l border-border flex-1 p-1">
         <div className="flex flex-col min-h-screen bg-app-background rounded-2xl">

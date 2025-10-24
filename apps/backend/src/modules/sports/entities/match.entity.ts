@@ -192,19 +192,33 @@ export class Match {
       possession?: number;
       shots?: number;
       shotsOnTarget?: number;
+      shotsOffTarget?: number;
+      blockedShots?: number;
       corners?: number;
+      offsides?: number;
       fouls?: number;
       yellowCards?: number;
       redCards?: number;
+      saves?: number;
+      totalPasses?: number;
+      passesAccurate?: number;
+      passAccuracy?: number;
     };
     away?: {
       possession?: number;
       shots?: number;
       shotsOnTarget?: number;
+      shotsOffTarget?: number;
+      blockedShots?: number;
       corners?: number;
+      offsides?: number;
       fouls?: number;
       yellowCards?: number;
       redCards?: number;
+      saves?: number;
+      totalPasses?: number;
+      passesAccurate?: number;
+      passAccuracy?: number;
     };
   };
 
