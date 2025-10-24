@@ -657,8 +657,13 @@ export class MatchesService {
               match.id = `api-${apiMatch.fixture.id}`;
               match.homeScore = apiMatch.goals.home;
               match.awayScore = apiMatch.goals.away;
+              match.homePenaltyScore = apiMatch.score?.penalty?.home || null;
+              match.awayPenaltyScore = apiMatch.score?.penalty?.away || null;
+              match.homeExtraTimeScore = apiMatch.score?.extratime?.home || null;
+              match.awayExtraTimeScore = apiMatch.score?.extratime?.away || null;
               match.startTime = new Date(apiMatch.fixture.date);
               match.status = MatchStatus.FINISHED;
+              match.minute = null;
 
               const homeTeam: ApiConvertedTeam = {
                 id: `api-${apiMatch.teams.home.id}`,
