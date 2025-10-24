@@ -6,9 +6,12 @@ export const cardVariants = cva('text-card-foreground flex flex-col gap-6 rounde
   variants: {
     variant: {
       outline: 'border border-border',
-      primary: 'bg-secondary/20',
+      primary: 'bg-foreground',
+      secondary: 'bg-app-background',
     },
     padding: {
+      none: 'p-0',
+      xs: 'p-1',
       sm: 'p-2',
       md: 'p-4',
       lg: 'p-6',
@@ -34,7 +37,7 @@ function Card({ className, ...props }: CardProps) {
     <div
       data-slot="card"
       className={cn(
-        'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm',
+        'text-card-foreground flex flex-col gap-6 rounded-xl border border-border py-6',
         className,
       )}
       {...props}

@@ -3,9 +3,23 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Match, MatchStatus } from '../entities/match.entity';
 import { MatchEvent, MatchEventType } from '../entities/match-event.entity';
-import { SportsApiService, ApiSportsEvent } from './sports-api.service';
+import { Team } from '../entities/team.entity';
+import { League } from '../entities/league.entity';
+import { SportsApiService, ApiSportsEvent, ApiSportsMatch } from './sports-api.service';
 import { LoggerService } from '@/common/services/logger.service';
-import { LeagueGroup, GroupedMatchesResult } from '../dto/league-group.dto';
+import { LeagueGroup, GroupedMatchesResult, HeadToHeadStats } from '../dto/league-group.dto';
+
+// Interfaces for API-converted entities
+interface ApiConvertedTeam {
+  id: string;
+  name: string;
+  logo?: string;
+}
+
+interface ApiConvertedLeague {
+  id: string;
+  name: string;
+}
 
 export interface MatchFilters {
   date?: string;
@@ -27,6 +41,8 @@ export class MatchesService {
     private readonly matchRepository: Repository<Match>,
     @InjectRepository(MatchEvent)
     private readonly matchEventRepository: Repository<MatchEvent>,
+    @InjectRepository(Team)
+    private readonly teamRepository: Repository<Team>,
     private readonly sportsApiService: SportsApiService,
     private readonly logger: LoggerService,
   ) {}
@@ -51,7 +67,6 @@ export class MatchesService {
       .leftJoinAndSelect('match.awayTeam', 'awayTeam')
       .leftJoinAndSelect('match.league', 'league');
 
-    // Apply filters
     if (date) {
       if (date === 'today') {
         const today = new Date().toISOString().split('T')[0];
@@ -86,10 +101,9 @@ export class MatchesService {
       });
     }
 
-    // Apply sorting
     queryBuilder.orderBy(`match.${sortBy}`, sortOrder);
 
-    // Apply pagination
+    // Apply
     queryBuilder.skip(offset).take(limit);
 
     const matches = await queryBuilder.getMany();
@@ -361,15 +375,15 @@ export class MatchesService {
     });
   }
 
-  async updateMatchFromApi(apiData: any): Promise<Match> {
+  async updateMatchFromApi(apiData: ApiSportsMatch): Promise<Match> {
     let match = await this.matchRepository.findOne({
-      where: { apiId: apiData.fixture.id },
+      where: { apiId: String(apiData.fixture.id) },
       relations: ['homeTeam', 'awayTeam', 'league'],
     });
 
     if (!match) {
       match = this.matchRepository.create({
-        apiId: apiData.fixture.id,
+        apiId: String(apiData.fixture.id),
       });
     }
 
@@ -405,10 +419,7 @@ export class MatchesService {
   async getMatchesByDateRange(from: Date, to: Date): Promise<Match[]> {
     return this.matchRepository.find({
       where: {
-        startTime: {
-          $gte: from,
-          $lte: to,
-        } as any,
+        startTime: Between(from, to),
       },
       relations: ['homeTeam', 'awayTeam', 'league'],
       order: { startTime: 'ASC' },
@@ -482,7 +493,10 @@ export class MatchesService {
         order: { minute: 'ASC', createdAt: 'ASC' },
       });
     } catch (error) {
-      this.logger.error('Failed to fetch or persist match events', error as any);
+      this.logger.error(
+        'Failed to fetch or persist match events',
+        error instanceof Error ? error.message : String(error),
+      );
       return [];
     }
   }
@@ -507,5 +521,458 @@ export class MatchesService {
     if (type === 'var') return MatchEventType.VAR;
 
     return MatchEventType.GOAL;
+  }
+
+  async findHeadToHeadMatches(
+    homeTeamId: string,
+    awayTeamId: string,
+    limit: number = 10,
+  ): Promise<Match[]> {
+    const existingMatches = await this.matchRepository
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.homeTeam', 'homeTeam')
+      .leftJoinAndSelect('match.awayTeam', 'awayTeam')
+      .leftJoinAndSelect('match.league', 'league')
+      .where(
+        '((match.homeTeamId = :team1 AND match.awayTeamId = :team2) OR (match.homeTeamId = :team2 AND match.awayTeamId = :team1))',
+        { team1: homeTeamId, team2: awayTeamId },
+      )
+      .andWhere('match.status = :finishedStatus', {
+        finishedStatus: MatchStatus.FINISHED,
+      })
+      .orderBy('match.startTime', 'DESC')
+      .limit(limit)
+      .getMany();
+
+    if (existingMatches.length >= Math.min(limit, 20)) {
+      return existingMatches;
+    }
+
+    try {
+      const [homeTeam, awayTeam] = await Promise.all([
+        this.teamRepository.findOne({ where: { id: homeTeamId }, select: ['id', 'apiId'] }),
+        this.teamRepository.findOne({ where: { id: awayTeamId }, select: ['id', 'apiId'] }),
+      ]);
+
+      if (!homeTeam?.apiId || !awayTeam?.apiId) {
+        this.logger.warn(`Missing API IDs for teams: ${homeTeamId}, ${awayTeamId}`);
+        return existingMatches;
+      }
+
+      this.logger.log(`Fetching H2H data from API for teams: ${homeTeam.apiId}, ${awayTeam.apiId}`);
+
+      const apiMatches = await this.sportsApiService.getHeadToHead(
+        parseInt(homeTeam.apiId, 10),
+        parseInt(awayTeam.apiId, 10),
+      );
+
+      if (apiMatches.length > 0) {
+        this.logger.log(
+          `Found ${apiMatches.length} H2H matches from API. Processing comprehensive stats...`,
+        );
+
+        const allConvertedMatches: Match[] = apiMatches.map(apiMatch => {
+          const match = new Match();
+          match.id = `api-${apiMatch.fixture.id}`;
+          match.homeScore = apiMatch.goals.home;
+          match.awayScore = apiMatch.goals.away;
+          match.startTime = new Date(apiMatch.fixture.date);
+          match.status = MatchStatus.FINISHED;
+
+          const homeTeam: ApiConvertedTeam = {
+            id: `api-${apiMatch.teams.home.id}`,
+            name: apiMatch.teams.home.name,
+            logo: apiMatch.teams.home.logo,
+          };
+          match.homeTeam = homeTeam as Team;
+
+          const awayTeam: ApiConvertedTeam = {
+            id: `api-${apiMatch.teams.away.id}`,
+            name: apiMatch.teams.away.name,
+            logo: apiMatch.teams.away.logo,
+          };
+          match.awayTeam = awayTeam as Team;
+
+          const league: ApiConvertedLeague = {
+            id: `api-${apiMatch.league.id}`,
+            name: apiMatch.league.name,
+          };
+          match.league = league as League;
+
+          return match;
+        });
+
+        const allMatches = [...allConvertedMatches, ...existingMatches].sort(
+          (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
+        );
+
+        return allMatches.slice(0, Math.min(limit, 10));
+      }
+
+      return existingMatches;
+    } catch (error) {
+      this.logger.error('Failed to fetch H2H data from API:', error);
+      return existingMatches;
+    }
+  }
+
+  async findHeadToHeadStats(homeTeamId: string, awayTeamId: string): Promise<HeadToHeadStats> {
+    try {
+      const existingMatches = await this.matchRepository
+        .createQueryBuilder('match')
+        .leftJoinAndSelect('match.homeTeam', 'homeTeam')
+        .leftJoinAndSelect('match.awayTeam', 'awayTeam')
+        .leftJoinAndSelect('match.league', 'league')
+        .where(
+          '((match.homeTeamId = :team1 AND match.awayTeamId = :team2) OR (match.homeTeamId = :team2 AND match.awayTeamId = :team1))',
+          { team1: homeTeamId, team2: awayTeamId },
+        )
+        .andWhere('match.status = :finishedStatus', {
+          finishedStatus: MatchStatus.FINISHED,
+        })
+        .orderBy('match.startTime', 'DESC')
+        .getMany();
+
+      let allMatches = existingMatches;
+
+      if (existingMatches.length < 20) {
+        const [homeTeam, awayTeam] = await Promise.all([
+          this.teamRepository.findOne({ where: { id: homeTeamId }, select: ['id', 'apiId'] }),
+          this.teamRepository.findOne({ where: { id: awayTeamId }, select: ['id', 'apiId'] }),
+        ]);
+
+        if (homeTeam?.apiId && awayTeam?.apiId) {
+          this.logger.log(
+            `Fetching comprehensive H2H data from API for teams: ${homeTeam.apiId}, ${awayTeam.apiId}`,
+          );
+
+          const apiMatches = await this.sportsApiService.getHeadToHead(
+            parseInt(homeTeam.apiId, 10),
+            parseInt(awayTeam.apiId, 10),
+          );
+
+          if (apiMatches.length > 0) {
+            const allConvertedMatches: Match[] = apiMatches.map(apiMatch => {
+              const match = new Match();
+              match.id = `api-${apiMatch.fixture.id}`;
+              match.homeScore = apiMatch.goals.home;
+              match.awayScore = apiMatch.goals.away;
+              match.homePenaltyScore = apiMatch.score?.penalty?.home || null;
+              match.awayPenaltyScore = apiMatch.score?.penalty?.away || null;
+              match.homeExtraTimeScore = apiMatch.score?.extratime?.home || null;
+              match.awayExtraTimeScore = apiMatch.score?.extratime?.away || null;
+              match.startTime = new Date(apiMatch.fixture.date);
+              match.status = MatchStatus.FINISHED;
+              match.minute = null;
+
+              const homeTeam: ApiConvertedTeam = {
+                id: `api-${apiMatch.teams.home.id}`,
+                name: apiMatch.teams.home.name,
+                logo: apiMatch.teams.home.logo,
+              };
+              match.homeTeam = homeTeam as Team;
+
+              const awayTeam: ApiConvertedTeam = {
+                id: `api-${apiMatch.teams.away.id}`,
+                name: apiMatch.teams.away.name,
+                logo: apiMatch.teams.away.logo,
+              };
+              match.awayTeam = awayTeam as Team;
+
+              const league: ApiConvertedLeague = {
+                id: `api-${apiMatch.league.id}`,
+                name: apiMatch.league.name,
+              };
+              match.league = league as League;
+
+              return match;
+            });
+
+            allMatches = [...allConvertedMatches, ...existingMatches].sort(
+              (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
+            );
+          }
+        }
+      }
+
+      const stats = allMatches.reduce(
+        (acc, match) => {
+          const isHomeTeamCurrentHome =
+            match.homeTeam.id === homeTeamId || match.homeTeam.name.includes(homeTeamId);
+          const currentHomeScore = isHomeTeamCurrentHome ? match.homeScore : match.awayScore;
+          const currentAwayScore = isHomeTeamCurrentHome ? match.awayScore : match.homeScore;
+
+          if (currentHomeScore > currentAwayScore) {
+            acc.homeWins++;
+          } else if (currentAwayScore > currentHomeScore) {
+            acc.awayWins++;
+          } else {
+            acc.draws++;
+          }
+
+          acc.totalMatches++;
+          acc.totalGoals += currentHomeScore + currentAwayScore;
+          acc.homeGoals += currentHomeScore;
+          acc.awayGoals += currentAwayScore;
+
+          if (currentHomeScore > currentAwayScore) {
+            acc.homePoints += 3;
+          } else if (currentAwayScore > currentHomeScore) {
+            acc.awayPoints += 3;
+          } else {
+            acc.homePoints += 1;
+            acc.awayPoints += 1;
+          }
+
+          return acc;
+        },
+        {
+          homeWins: 0,
+          awayWins: 0,
+          draws: 0,
+          totalMatches: 0,
+          totalGoals: 0,
+          homeGoals: 0,
+          awayGoals: 0,
+          homePoints: 0,
+          awayPoints: 0,
+        },
+      );
+
+      const homeWinPercent =
+        stats.totalMatches > 0 ? (stats.homeWins / stats.totalMatches) * 100 : 0;
+      const drawPercent = stats.totalMatches > 0 ? (stats.draws / stats.totalMatches) * 100 : 0;
+      const awayWinPercent =
+        stats.totalMatches > 0 ? (stats.awayWins / stats.totalMatches) * 100 : 0;
+      const avgPointsPerGame =
+        stats.totalMatches > 0
+          ? (stats.homePoints + stats.awayPoints) / (stats.totalMatches * 2)
+          : 0;
+
+      return {
+        totalMatches: stats.totalMatches,
+        homeWins: stats.homeWins,
+        awayWins: stats.awayWins,
+        draws: stats.draws,
+        totalGoals: stats.totalGoals,
+        homeGoals: stats.homeGoals,
+        awayGoals: stats.awayGoals,
+        homeWinPercent,
+        awayWinPercent,
+        drawPercent,
+        avgPointsPerGame,
+        recentMatches: allMatches.slice(0, 10),
+      };
+    } catch (error) {
+      this.logger.error('Failed to fetch comprehensive H2H stats:', error);
+      return {
+        totalMatches: 0,
+        homeWins: 0,
+        awayWins: 0,
+        draws: 0,
+        totalGoals: 0,
+        homeGoals: 0,
+        awayGoals: 0,
+        homeWinPercent: 0,
+        awayWinPercent: 0,
+        drawPercent: 0,
+        avgPointsPerGame: 0,
+        recentMatches: [],
+      };
+    }
+  }
+
+  async findTeamRecentMatches(teamId: string, limit: number = 5): Promise<Match[]> {
+    const existingMatches = await this.matchRepository
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.homeTeam', 'homeTeam')
+      .leftJoinAndSelect('match.awayTeam', 'awayTeam')
+      .leftJoinAndSelect('match.league', 'league')
+      .where('(match.homeTeamId = :teamId OR match.awayTeamId = :teamId)', {
+        teamId,
+      })
+      .andWhere('match.status = :finishedStatus', {
+        finishedStatus: MatchStatus.FINISHED,
+      })
+      .orderBy('match.startTime', 'DESC')
+      .limit(limit)
+      .getMany();
+
+    if (existingMatches.length >= Math.min(limit, 10)) {
+      return existingMatches;
+    }
+
+    try {
+      const team = await this.teamRepository.findOne({
+        where: { id: teamId },
+        select: ['id', 'apiId'],
+      });
+
+      if (!team?.apiId) {
+        this.logger.warn(`Missing API ID for team: ${teamId}`);
+        return existingMatches;
+      }
+
+      const apiMatches = await this.sportsApiService.getTeamRecentFixtures(
+        parseInt(team.apiId, 10),
+        limit,
+      );
+
+      if (apiMatches.length > 0) {
+        this.logger.log(`Found ${apiMatches.length} recent matches from API. Converting...`);
+
+        const convertedMatches: Match[] = apiMatches.map(apiMatch => {
+          const match = new Match();
+          match.id = `api-${apiMatch.fixture.id}`;
+          match.homeScore = apiMatch.goals.home;
+          match.awayScore = apiMatch.goals.away;
+          match.startTime = new Date(apiMatch.fixture.date);
+          match.status = MatchStatus.FINISHED;
+
+          const homeTeam: ApiConvertedTeam = {
+            id: `api-${apiMatch.teams.home.id}`,
+            name: apiMatch.teams.home.name,
+            logo: apiMatch.teams.home.logo,
+          };
+          match.homeTeam = homeTeam as Team;
+
+          const awayTeam: ApiConvertedTeam = {
+            id: `api-${apiMatch.teams.away.id}`,
+            name: apiMatch.teams.away.name,
+            logo: apiMatch.teams.away.logo,
+          };
+          match.awayTeam = awayTeam as Team;
+
+          const league: ApiConvertedLeague = {
+            id: `api-${apiMatch.league.id}`,
+            name: apiMatch.league.name,
+          };
+          match.league = league as League;
+
+          return match;
+        });
+
+        return [...convertedMatches, ...existingMatches].slice(0, Math.min(limit, 5));
+      }
+
+      return existingMatches;
+    } catch (error) {
+      this.logger.error('Failed to fetch recent matches from API:', error);
+      return existingMatches;
+    }
+  }
+
+  async findTeamUpcomingMatches(teamId: string, limit: number = 5): Promise<Match[]> {
+    // First, check database for upcoming matches
+    const existingMatches = await this.matchRepository
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.homeTeam', 'homeTeam')
+      .leftJoinAndSelect('match.awayTeam', 'awayTeam')
+      .leftJoinAndSelect('match.league', 'league')
+      .where('(match.homeTeamId = :teamId OR match.awayTeamId = :teamId)', {
+        teamId,
+      })
+      .andWhere('match.status = :scheduledStatus', {
+        scheduledStatus: MatchStatus.SCHEDULED,
+      })
+      .orderBy('match.startTime', 'ASC')
+      .limit(limit)
+      .getMany();
+
+    if (existingMatches.length >= Math.min(limit, 10)) {
+      return existingMatches;
+    }
+
+    try {
+      const team = await this.teamRepository.findOne({
+        where: { id: teamId },
+        select: ['id', 'apiId'],
+      });
+
+      if (!team?.apiId) {
+        this.logger.warn(`Missing API ID for team: ${teamId}`);
+        return existingMatches;
+      }
+
+      this.logger.log(`Fetching next ${limit} upcoming matches for team API ID: ${team.apiId}`);
+
+      const currentYear = new Date().getFullYear();
+
+      const apiMatches = await this.sportsApiService.getFixtures(
+        undefined,
+        currentYear,
+        undefined,
+        false,
+        undefined,
+        parseInt(team.apiId, 10),
+      );
+
+      this.logger.log(
+        `Raw API response: ${apiMatches.length} total matches for team ${team.apiId} in ${currentYear}`,
+      );
+
+      if (apiMatches.length > 0) {
+        apiMatches.slice(0, 3).forEach((match, index) => {
+          this.logger.log(
+            `Sample match ${index + 1}: ${match.teams.home.name} vs ${match.teams.away.name} on ${match.fixture.date}`,
+          );
+        });
+
+        this.logger.log(`Found ${apiMatches.length} total matches from API. Processing...`);
+
+        const today = new Date();
+        this.logger.log(`Filtering and sorting upcoming matches after: ${today.toISOString()}`);
+
+        const futureMatches = apiMatches
+          .filter(apiMatch => {
+            const matchDate = new Date(apiMatch.fixture.date);
+            return matchDate > today;
+          })
+          .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime()) // Sort by date ascending
+          .slice(0, limit);
+
+        this.logger.log(
+          `After filtering and sorting: ${futureMatches.length} upcoming matches (requested: ${limit})`,
+        );
+
+        const convertedMatches: Match[] = futureMatches.map(apiMatch => {
+          const match = new Match();
+          match.id = `api-${apiMatch.fixture.id}`;
+          match.homeScore = null;
+          match.awayScore = null;
+          match.startTime = new Date(apiMatch.fixture.date);
+          match.status = MatchStatus.SCHEDULED;
+
+          const homeTeam: ApiConvertedTeam = {
+            id: `api-${apiMatch.teams.home.id}`,
+            name: apiMatch.teams.home.name,
+            logo: apiMatch.teams.home.logo,
+          };
+          match.homeTeam = homeTeam as Team;
+
+          const awayTeam: ApiConvertedTeam = {
+            id: `api-${apiMatch.teams.away.id}`,
+            name: apiMatch.teams.away.name,
+            logo: apiMatch.teams.away.logo,
+          };
+          match.awayTeam = awayTeam as Team;
+
+          const league: ApiConvertedLeague = {
+            id: `api-${apiMatch.league.id}`,
+            name: apiMatch.league.name,
+          };
+          match.league = league as League;
+
+          return match;
+        });
+
+        return [...convertedMatches, ...existingMatches].slice(0, Math.min(limit, 5));
+      }
+
+      return existingMatches;
+    } catch (error) {
+      this.logger.error('Failed to fetch upcoming matches from API:', error);
+      return existingMatches;
+    }
   }
 }

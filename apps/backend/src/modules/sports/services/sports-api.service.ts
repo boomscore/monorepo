@@ -313,6 +313,7 @@ export class SportsApiService {
     date?: string,
     live?: boolean,
     fixtureId?: number,
+    teamId?: number,
   ): Promise<ApiSportsMatch[]> {
     try {
       const params: Record<string, string | number> = {};
@@ -321,6 +322,7 @@ export class SportsApiService {
       if (date) params.date = date;
       if (live) params.live = 'all';
       if (fixtureId) params.id = fixtureId;
+      if (teamId) params.team = teamId;
 
       const response = await this.httpClient.get<ApiSportsResponse<ApiSportsMatch>>('/fixtures', {
         params,
