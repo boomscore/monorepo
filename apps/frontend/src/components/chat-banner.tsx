@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import Image from 'next/image';
 import { Button } from './ui';
 import { AuthBanner } from './auth';
+import { cn } from '@/lib/utils';
 
 export const ChatBanner: React.FC = () => {
   const [showAuth, setShowAuth] = useState(false);
@@ -48,10 +49,10 @@ export const ChatBanner: React.FC = () => {
     <div className="min-h-screen">
       <div
         aria-hidden={showAuth}
-        className={[
+        className={cn(
           'mx-auto mt-2 md:w-[481px] transition-[max-height,opacity,transform] duration-500 ease-in-out overflow-hidden',
           showAuth ? 'max-h-0 opacity-0 -translate-y-4' : 'max-h-[520px] opacity-100 translate-y-0',
-        ].join(' ')}
+        )}
       >
         <div className="flex flex-col justify-center items-center md:w-[481px] h-[437px] mt-5">
           {/* Dark-mode logo (hidden in light mode) */}
@@ -80,12 +81,12 @@ export const ChatBanner: React.FC = () => {
       <div
         ref={authRef}
         aria-hidden={!showAuth}
-        className={[
-          'mx-auto mt-2 w-full md:max-w-[640px] transition-[max-height,opacity,transform] duration-500 ease-in-out overflow-hidden',
-          showAuth
-            ? 'max-h-[2000px] opacity-100 translate-y-0'
-            : 'max-h-0 opacity-0 -translate-y-4',
-        ].join(' ')}
+     className={cn(
+    "mx-auto mt-2 w-full md:max-w-[640px] transition-[max-height,opacity,transform] duration-500 ease-in-out overflow-hidden",
+    showAuth
+      ? "max-h-[2000px] opacity-100 translate-y-0"
+      : "max-h-0 opacity-0 -translate-y-4"
+  )}
       >
         <div className="md:w-[481px] mx-auto">
           <AuthBanner onCancel={handleCancel} />
