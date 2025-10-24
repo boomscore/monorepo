@@ -10,10 +10,8 @@ export const FixtureSportTypeTabs = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const currentSport =
-    (searchParams.get('sport') as SportType) || SportType.FOOTBALL;
+  const currentSport = (searchParams.get('sport') as SportType) || SportType.FOOTBALL;
 
-  // Ensure default sport is set in URL
   useEffect(() => {
     const sportParam = searchParams.get('sport');
     if (!sportParam) {
@@ -32,7 +30,7 @@ export const FixtureSportTypeTabs = () => {
   return (
     <div className="w-full overflow-x-auto no-scrollbar">
       <Tabs defaultValue={currentSport}>
-        <TabsList variant="default" shape="pill" size="lg" className="inline-flex w-auto">
+        <TabsList variant="default" shape="pill" size="sm" className="inline-flex w-auto">
           {Object.entries(SPORT_CONFIGS).map(([sportKey, config]) => {
             const sport = sportKey as SportType;
             const isDisabled = !config.isActive;
@@ -43,9 +41,6 @@ export const FixtureSportTypeTabs = () => {
                 value={sport}
                 disabled={isDisabled}
                 onClick={() => !isDisabled && handleSportChange(sport)}
-                className={`inline-flex items-center gap-2 whitespace-nowrap ${
-                  currentSport === sport ? 'text-primary font-semibold' : 'text-muted-foreground'
-                }`}
               >
                 {config.name}
               </TabsTrigger>

@@ -8,6 +8,7 @@ import { FixtureDetailsHeader } from './fixture-details-header';
 import { CompactStandings } from './compact-standings';
 import { HeadToHead } from './head-to-head';
 import { RecentUpcoming } from './recent-upcoming';
+import { MatchStatistics } from './match-statistics';
 
 const GET_MATCH_FOR_DETAILS = gql`
   query GetMatchForDetails($matchId: String!) {
@@ -65,6 +66,16 @@ export const FixtureContent = () => {
         footer={<FixtureDetailsHeader />}
         padding="none"
         direction="reverse"
+      />
+
+      <NestedCards
+        header={
+          <div className="p-2">
+            <h3 className="font-semibold text-sm">Match Statistics</h3>
+          </div>
+        }
+        footer={<MatchStatistics matchId={match.id} />}
+        padding="px"
       />
 
       <NestedCards

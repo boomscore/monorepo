@@ -106,7 +106,7 @@ export const CompactStandings: React.FC<CompactStandingsProps> = ({
               </div>
               <div className="p-4 text-center">
                 <p className="text-text-grey">Form</p>
-                <p className="font-medium text-sm">{homeTeamData.form || '-'}</p>
+                <p className="font-medium text-sm truncate">{homeTeamData.form || '-'}</p>
               </div>
             </div>
           </div>
@@ -136,7 +136,7 @@ export const CompactStandings: React.FC<CompactStandingsProps> = ({
               </div>
               <div className="p-4 text-center">
                 <p className="text-text-grey">Form</p>
-                <p className="font-medium text-sm">{awayTeamData.form || '-'}</p>
+                <p className="font-medium text-sm truncate">{awayTeamData.form || '-'}</p>
               </div>
             </div>
           </div>
