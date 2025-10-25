@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-
 export function useScrollRestoration<T extends HTMLElement = HTMLDivElement>(
   storageKey: string = 'scroll-position',
 ) {
@@ -70,7 +69,7 @@ export function useScrollRestoration<T extends HTMLElement = HTMLDivElement>(
   };
 }
 
-]declare global {
+declare global {
   interface Window {
     scrollSaveTimeout: NodeJS.Timeout;
   }
