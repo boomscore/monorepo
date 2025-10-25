@@ -13,6 +13,7 @@ import { MatchEvents } from './match-events';
 import { MatchCommentary } from './match-commentary';
 import { MatchTimeline } from './match-timeline';
 import { MatchLineups } from './match-lineups';
+import { FixturePrediction } from './fixture-prediction';
 
 const GET_MATCH_FOR_DETAILS = gql`
   query GetMatchForDetails($matchId: String!) {
@@ -66,7 +67,7 @@ export const FixtureContent = () => {
   return (
     <div className="space-y-6">
       <NestedCards
-        header={<div />}
+        header={<FixturePrediction />}
         footer={<FixtureDetailsHeader />}
         padding="none"
         direction="reverse"
