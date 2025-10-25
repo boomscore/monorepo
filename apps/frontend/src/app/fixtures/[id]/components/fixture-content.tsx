@@ -3,12 +3,16 @@
 import React from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, gql } from '@apollo/client';
-import { NestedCards, Skeleton } from '@/components';
+import { NestedCards, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components';
 import { FixtureDetailsHeader } from './fixture-details-header';
 import { CompactStandings } from './compact-standings';
 import { HeadToHead } from './head-to-head';
 import { RecentUpcoming } from './recent-upcoming';
 import { MatchStatistics } from './match-statistics';
+import { MatchEvents } from './match-events';
+import { MatchCommentary } from './match-commentary';
+import { MatchTimeline } from './match-timeline';
+import { MatchLineups } from './match-lineups';
 
 const GET_MATCH_FOR_DETAILS = gql`
   query GetMatchForDetails($matchId: String!) {
@@ -78,6 +82,33 @@ export const FixtureContent = () => {
         padding="px"
       />
 
+      <Tabs defaultValue="events" className="w-full">
+        <NestedCards
+          header={
+            <TabsList>
+              <TabsTrigger value="events">Events</TabsTrigger>
+              <TabsTrigger value="commentary">Commentary</TabsTrigger>
+              <TabsTrigger value="lineups">Lineups</TabsTrigger>
+            </TabsList>
+          }
+          footer={
+            <div>
+              <TabsContent value="events" className="mt-4">
+                <MatchTimeline matchId={matchId} />
+              </TabsContent>
+
+              <TabsContent value="commentary" className="mt-4">
+                <MatchCommentary matchId={matchId} />
+              </TabsContent>
+
+              <TabsContent value="lineups" className="mt-4">
+                <MatchLineups matchId={matchId} />
+              </TabsContent>
+            </div>
+          }
+          padding="px"
+        />
+      </Tabs>
       <NestedCards
         header={
           <div className="p-2">
