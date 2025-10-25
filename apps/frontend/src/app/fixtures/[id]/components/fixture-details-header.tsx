@@ -60,7 +60,6 @@ export const FixtureDetailsHeader = () => {
       }
     }
 
-    // Cleanup on unmount
     return () => {
       stopPolling();
     };
