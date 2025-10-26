@@ -4,6 +4,8 @@ import React, { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
+import { gql, useMutation } from '@apollo/client';
+import { toast } from 'sonner';
 import {
   Form,
   FormField,
@@ -16,6 +18,18 @@ import {
   Separator,
 } from '../ui';
 import Image from 'next/image';
+
+const LOGIN_MUTATION = gql`
+  mutation Login($input: LoginInput!) {
+    login(input: $input) {
+      user {
+        email
+        id
+      }
+      accessToken
+    }
+  }
+`;
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -32,6 +46,8 @@ type Props = {
 };
 
 export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
+  const [login, { loading, error }] = useMutation(LOGIN_MUTATION);
+
   const form = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: { email: '', password: '' },
@@ -44,17 +60,31 @@ export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
   }, [active]);
 
   const onSubmit = form.handleSubmit(async values => {
-    // simulate submit
     try {
-      await new Promise(r => setTimeout(r, 700));
-      onSuccess?.();
-    } catch {
-      // handle error
+      const { data } = await login({
+        variables: {
+          input: {
+            email: values.email,
+            password: values.password,
+          },
+        },
+      });
+
+      if (data?.login?.accessToken) {
+        localStorage.setItem('accessToken', data.login.accessToken);
+        toast.success('Login successful!', {
+          description: `Welcome back, ${data.login.user.email}`,
+        });
+        onSuccess?.();
+      }
+    } catch (err: any) {
+      toast.error('Login failed', {
+        description: err?.message || 'Invalid email or password',
+      });
     }
   });
 
-
-  const { isSubmitting } = form.formState;
+  const isSubmitting = loading || form.formState.isSubmitting;
   const submitLabel = isSubmitting ? 'Signing in...' : 'Sign in';
 
   return (
@@ -110,14 +140,14 @@ export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
           <Button
             type="submit"
             size="lg"
-            className="text-[#EAFAF4] bg-[#2bbb82] w-full"
+            className="w-full"
             disabled={isSubmitting}
           >
             {submitLabel}
           </Button>
         </div>
 
-        <div className='space-y-3'>
+        <div className="space-y-3">
           <div className="flex justify-center items-center gap-2 overflow-hidden">
             <Separator orientation="horizontal" />
             <h2 className="text-sm w-fit">Or </h2>

@@ -1,19 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Card,
-  CardHeader,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-  Button,
-} from '../ui';
+import { Card, CardHeader, Tabs, TabsList, TabsTrigger, TabsContent, Button } from '../ui';
 import Image from 'next/image';
 import { SignUp } from './sign-up';
 import { SignIn } from './sign-in';
-
 
 type AuthBannerProps = {
   onCancel?: () => void;
@@ -26,12 +17,7 @@ export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel }) => {
 
   return (
     <div className="min-h-screen py-6 px-2 md:px-6 flex flex-col justify-center items-center">
-      <Card
-        variant="primary"
-        padding="sm"
-        gap="lg"
-        className="w-full dark:bg-transparent lg:dark:bg-black md:dark:border shadow-lg"
-      >
+      <Card variant="primary" padding="sm" gap="lg" className="w-full bg-background">
         <CardHeader>
           <div className="w-full">
             <Tabs
@@ -48,15 +34,13 @@ export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel }) => {
                   className="inline-flex w-auto bg-white"
                 >
                   <TabsTrigger value="signup" asChild>
-                    <Button type="button" className="inline-flex items-center px-4 py-2 ">
+                    <Button type="button"  className="bg-grey-950 text-primary ">
                       Sign up
                     </Button>
                   </TabsTrigger>
 
                   <TabsTrigger value="signin" asChild>
-                    <Button type="button" className="inline-flex items-center px-4 py-2">
-                      Sign in
-                    </Button>
+                    <Button type="button" className="bg-grey-950 text-primary ">Sign in</Button>
                   </TabsTrigger>
                 </TabsList>
 
@@ -74,29 +58,11 @@ export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel }) => {
               </div>
 
               <TabsContent value="signup" className="mt-4">
-                {signUpSuccess ? (
-                  <div className="p-4 rounded-md bg-brand-450 text-brand-900">
-                    Account created — check your email for confirmation (simulated).
-                  </div>
-                ) : (
-                  <SignUp
-                    active={activeTab === 'signup'}
-                    onSuccess={() => setSignUpSuccess(true)}
-                  />
-                )}
+                <SignUp active={activeTab === 'signup'} onSuccess={() => setSignUpSuccess(true)} />
               </TabsContent>
 
               <TabsContent value="signin" className="mt-4">
-                {signInSuccess ? (
-                  <div className="p-4 rounded-md bg-brand-450 text-brand-900">
-                    Signed in successfully (simulated).
-                  </div>
-                ) : (
-                  <SignIn
-                    active={activeTab === 'signin'}
-                    onSuccess={() => setSignInSuccess(true)}
-                  />
-                )}
+                <SignIn active={activeTab === 'signin'} onSuccess={() => setSignInSuccess(true)} />
               </TabsContent>
             </Tabs>
           </div>

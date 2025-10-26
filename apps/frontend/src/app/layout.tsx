@@ -3,6 +3,7 @@ import { Onest, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ApolloProvider } from '@/lib/apollo';
 import { Navbar } from '@/components';
+import { Toaster } from 'sonner';
 
 const geistSans = Onest({
   variable: '--font-geist-sans',
@@ -30,6 +31,7 @@ export default function RootLayout({
         <ApolloProvider>
           <Navbar />
           {children}
+          <Toaster position="top-right" richColors />
         </ApolloProvider>
       </body>
     </html>
