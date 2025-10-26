@@ -31,6 +31,11 @@ import { PaymentsModule } from '@/modules/payments/payments.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: [
+        join(process.cwd(), '.env'), // Try current directory first
+        join(process.cwd(), '..', '..', '.env'), // Try monorepo root
+        join(__dirname, '..', '..', '..', '..', '.env'), // Try from dist folder
+      ],
       load: [configuration],
       validationSchema,
       validationOptions: {

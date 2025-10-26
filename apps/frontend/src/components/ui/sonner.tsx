@@ -1,25 +1,102 @@
 'use client';
 
-import { useTheme } from 'next-themes';
-import { Toaster as Sonner, ToasterProps } from 'sonner';
+import { Alert, AlertIcon, AlertTitle } from './alert';
+import { Button } from '@/components/ui/button';
+import { RiCheckboxCircleFill, RiErrorWarningFill, RiSpam3Fill } from '@remixicon/react';
+import { toast } from 'sonner';
 
-const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = 'system' } = useTheme();
 
+export default function SonnerDemo() {
   return (
-    <Sonner
-      theme={theme as ToasterProps['theme']}
-      className="toaster group"
-      style={
-        {
-          '--normal-bg': 'var(--popover)',
-          '--normal-text': 'var(--popover-foreground)',
-          '--normal-border': 'var(--border)',
-        } as React.CSSProperties
-      }
-      {...props}
-    />
+    <div className="flex gap-6">
+      <Button
+        variant="outline"
+        className="text-green-500"
+        size="sm"
+        onClick={() =>
+          toast.custom(
+            (t) => (
+              <Alert variant="mono" icon="success" onClose={() => toast.dismiss(t)}>
+                <AlertIcon>
+                  <RiCheckboxCircleFill />
+                </AlertIcon>
+                <AlertTitle>This is a success toast</AlertTitle>
+              </Alert>
+            ),
+            {
+              duration: 5000,
+            },
+          )
+        }
+      >
+        Success
+      </Button>
+      <Button
+        variant="outline"
+        className="text-violet-500"
+        size="sm"
+        onClick={() =>
+          toast.custom(
+            (t) => (
+              <Alert variant="mono" icon="info" onClose={() => toast.dismiss(t)}>
+                <AlertIcon>
+                  <RiCheckboxCircleFill />
+                </AlertIcon>
+                <AlertTitle>This is an info toast</AlertTitle>
+              </Alert>
+            ),
+            {
+              duration: 5000,
+            },
+          )
+        }
+      >
+        Info
+      </Button>
+      <Button
+        variant="outline"
+        className="text-yellow-500"
+        size="sm"
+        onClick={() =>
+          toast.custom(
+            (t) => (
+              <Alert variant="mono" icon="warning" onClose={() => toast.dismiss(t)}>
+                <AlertIcon>
+                  <RiSpam3Fill />
+                </AlertIcon>
+                <AlertTitle>This is a warning toast</AlertTitle>
+              </Alert>
+            ),
+            {
+              duration: 5000,
+            },
+          )
+        }
+      >
+        Warning
+      </Button>
+      <Button
+        variant="outline"
+        className="text-destructive"
+        size="sm"
+        onClick={() =>
+          toast.custom(
+            (t) => (
+              <Alert variant="mono" icon="destructive" onClose={() => toast.dismiss(t)}>
+                <AlertIcon>
+                  <RiErrorWarningFill />
+                </AlertIcon>
+                <AlertTitle>This is a destructive toast</AlertTitle>
+              </Alert>
+            ),
+            {
+              duration: 5000,
+            },
+          )
+        }
+      >
+        Destructive
+      </Button>
+    </div>
   );
-};
-
-export { Toaster };
+}
