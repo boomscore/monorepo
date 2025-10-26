@@ -2,9 +2,8 @@
 
 import { Alert, AlertIcon, AlertTitle } from './alert';
 import { Button } from '@/components/ui/button';
-import { RiCheckboxCircleFill, RiErrorWarningFill, RiSpam3Fill } from '@remixicon/react';
+import { CheckCircle, Info, AlertTriangle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
-
 
 export default function SonnerDemo() {
   return (
@@ -15,10 +14,10 @@ export default function SonnerDemo() {
         size="sm"
         onClick={() =>
           toast.custom(
-            (t) => (
+            t => (
               <Alert variant="mono" icon="success" onClose={() => toast.dismiss(t)}>
                 <AlertIcon>
-                  <RiCheckboxCircleFill />
+                  <CheckCircle />
                 </AlertIcon>
                 <AlertTitle>This is a success toast</AlertTitle>
               </Alert>
@@ -37,10 +36,10 @@ export default function SonnerDemo() {
         size="sm"
         onClick={() =>
           toast.custom(
-            (t) => (
+            t => (
               <Alert variant="mono" icon="info" onClose={() => toast.dismiss(t)}>
                 <AlertIcon>
-                  <RiCheckboxCircleFill />
+                  <Info />
                 </AlertIcon>
                 <AlertTitle>This is an info toast</AlertTitle>
               </Alert>
@@ -59,10 +58,10 @@ export default function SonnerDemo() {
         size="sm"
         onClick={() =>
           toast.custom(
-            (t) => (
+            t => (
               <Alert variant="mono" icon="warning" onClose={() => toast.dismiss(t)}>
                 <AlertIcon>
-                  <RiSpam3Fill />
+                  <AlertTriangle />
                 </AlertIcon>
                 <AlertTitle>This is a warning toast</AlertTitle>
               </Alert>
@@ -81,10 +80,10 @@ export default function SonnerDemo() {
         size="sm"
         onClick={() =>
           toast.custom(
-            (t) => (
+            t => (
               <Alert variant="mono" icon="destructive" onClose={() => toast.dismiss(t)}>
                 <AlertIcon>
-                  <RiErrorWarningFill />
+                  <XCircle />
                 </AlertIcon>
                 <AlertTitle>This is a destructive toast</AlertTitle>
               </Alert>
