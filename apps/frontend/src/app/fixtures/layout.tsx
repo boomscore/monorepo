@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { useMobile } from '@/lib/utils/use-mobile';
 import { Button, Chat, ChatBanner } from '@/components';
+import { useScrollRestoration } from '@/lib/utils/use-scroll-restoration';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui';
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 
@@ -12,12 +13,15 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 export default function FixturesLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useMobile();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const { scrollElementRef } = useScrollRestoration('fixtures-scroll');
 
 
   if (isMobile) {
     return (
       <div className="flex flex-col h-screen">
-        <div className="flex-1  w-full h-full overflow-y-auto ">{children}</div>
+        <div ref={scrollElementRef} className="flex-1  w-full h-full overflow-y-auto ">
+          {children}
+        </div>
 
 
       <div>
@@ -52,7 +56,12 @@ export default function FixturesLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="flex h-[calc(100vh-64px)]">
-      <div className="max-w-[600px] w-full h-full overflow-y-auto no-scrollbar">{children}</div>
+      <div
+        ref={scrollElementRef}
+        className="max-w-[600px] w-full h-full overflow-y-auto no-scrollbar"
+      >
+        {children}
+      </div>
 
       <div className="border-l border-border flex-1 p-1">
         <div className="flex flex-col min-h-screen bg-app-background rounded-2xl">

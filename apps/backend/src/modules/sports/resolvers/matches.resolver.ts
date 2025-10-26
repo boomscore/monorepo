@@ -1,12 +1,17 @@
 import { Resolver, Query, Args } from '@nestjs/graphql';
 import { MatchesService, MatchFilters } from '../services/matches.service';
+import { SportsQueryService } from '../services/sports-query.service';
 import { Match } from '../entities/match.entity';
 import { MatchEvent } from '../entities/match-event.entity';
 import { GroupedMatchesResult, HeadToHeadStats } from '../dto/league-group.dto';
+import { MatchLineups } from '../dto/lineup.dto';
 
 @Resolver(() => Match)
 export class MatchesResolver {
-  constructor(private readonly matchesService: MatchesService) {}
+  constructor(
+    private readonly matchesService: MatchesService,
+    private readonly sportsQueryService: SportsQueryService,
+  ) {}
 
   @Query(() => [Match])
   async matches(
@@ -115,5 +120,73 @@ export class MatchesResolver {
   @Query(() => [MatchEvent])
   async matchEvents(@Args('matchId') matchId: string) {
     return this.matchesService.getMatchEvents(matchId);
+  }
+
+  @Query(() => MatchLineups, { nullable: true })
+  async matchLineups(@Args('matchId') matchId: string): Promise<MatchLineups | null> {
+    try {
+      const match = await this.matchesService.findById(matchId);
+      if (!match || !match.apiId) {
+        return null;
+      }
+
+      const lineups = await this.sportsQueryService.getLineups({
+        fixtureApiId: parseInt(match.apiId, 10),
+      });
+
+      if (lineups.length === 0) {
+        return null;
+      }
+
+      const homeTeam = lineups.find(lineup =>
+        lineup.team.name.toLowerCase().includes(match.homeTeam?.name.toLowerCase() || ''),
+      );
+      const awayTeam =
+        lineups.find(lineup =>
+          lineup.team.name.toLowerCase().includes(match.awayTeam?.name.toLowerCase() || ''),
+        ) || lineups.find(lineup => lineup !== homeTeam);
+
+      return {
+        homeTeam: homeTeam
+          ? {
+              name: homeTeam.team.name,
+              logo: homeTeam.team.logo,
+              formation: homeTeam.formation,
+              startXI: homeTeam.startXI.map(player => ({
+                name: player.player.name,
+                number: player.player.number,
+                position: player.player.pos,
+              })),
+              substitutes: homeTeam.substitutes.map(player => ({
+                name: player.player.name,
+                number: player.player.number,
+                position: player.player.pos,
+              })),
+              coach: homeTeam.coach,
+            }
+          : undefined,
+        awayTeam: awayTeam
+          ? {
+              name: awayTeam.team.name,
+              logo: awayTeam.team.logo,
+              formation: awayTeam.formation,
+              startXI: awayTeam.startXI.map(player => ({
+                name: player.player.name,
+                number: player.player.number,
+                position: player.player.pos,
+              })),
+              substitutes: awayTeam.substitutes.map(player => ({
+                name: player.player.name,
+                number: player.player.number,
+                position: player.player.pos,
+              })),
+              coach: awayTeam.coach,
+            }
+          : undefined,
+      };
+    } catch (error) {
+      console.error('Failed to fetch match lineups:', error);
+      return null;
+    }
   }
 }

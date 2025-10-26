@@ -148,7 +148,7 @@ export const RecentUpcoming: React.FC<RecentUpcomingProps> = ({
 
   return (
     <section className="space-y-4">
-      <Tabs defaultValue="recent" className="w-full">
+       <Tabs defaultValue="recent" className="w-full">
         <TabsList>
           <TabsTrigger value="recent">Recent</TabsTrigger>
           <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
