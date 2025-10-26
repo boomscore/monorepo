@@ -26,14 +26,14 @@ export const ChatBanner: React.FC = () => {
           </div>
 
           {/* Light-mode logo (hidden in dark mode) */}
-          <div className="flex dark:hidden rounded-full p-4 border-[0.2px] border-grey-900">
+          <div className="flex dark:hidden rounded-full p-4 border-[0.2px] border-border-grey">
             <Image src="/chatlogo.svg" alt="Light mode chat icon" width={100} height={100} />
           </div>
 
           <div className="flex flex-col items-center justify-center text-center mt-6">
-            <h2 className="text-xs mt-4 text-grey-450">BOOMSCORE AI ASSISTANT</h2>
+            <h3 className="text-xs mt-4 text-text-grey">BOOMSCORE AI ASSISTANT</h3>
             <h1 className="font-semibold text-2xl">Ask BoomScore AI</h1>
-            <h2 className="text-2xl font-semibold text-grey-450">just anything...</h2>
+            <h3 className="text-2xl font-semibold text-text-grey">just anything...</h3>
           </div>
           <div className="mt-6">
             <Button size="lg" onClick={handleStart}>
@@ -44,10 +44,8 @@ export const ChatBanner: React.FC = () => {
       )}
 
       {showAuth && (
-        <div className="mx-auto mt-2 w-full md:max-w-[640px]">
-          <div className="md:w-[481px] mx-auto">
-            <AuthBanner onCancel={handleCancel} />
-          </div>
+        <div className="mx-auto mt-2 w-full md:max-w-[481px]">
+          <AuthBanner onCancel={handleCancel} />
         </div>
       )}
     </div>

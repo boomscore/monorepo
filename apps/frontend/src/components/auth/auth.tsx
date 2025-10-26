@@ -17,7 +17,7 @@ export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel }) => {
 
   return (
     <div className="min-h-screen py-6 px-2 md:px-6 flex flex-col justify-center items-center">
-      <Card variant="primary" padding="sm" gap="lg" className="w-full bg-background">
+      <Card padding="sm"  className="w-full bg-background">
         <CardHeader>
           <div className="w-full">
             <Tabs
@@ -31,16 +31,16 @@ export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel }) => {
                   variant="default"
                   shape="pill"
                   size="lg"
-                  className="inline-flex w-auto bg-white"
+                  className="bg-background"
                 >
                   <TabsTrigger value="signup" asChild>
-                    <Button type="button"  className="bg-grey-950 text-primary ">
+                    <Button type="button"  >
                       Sign up
                     </Button>
                   </TabsTrigger>
 
                   <TabsTrigger value="signin" asChild>
-                    <Button type="button" className="bg-grey-950 text-primary ">Sign in</Button>
+                    <Button type="button" >Sign in</Button>
                   </TabsTrigger>
                 </TabsList>
 

@@ -16,6 +16,7 @@ import {
   Separator,
 } from '../ui';
 import Image from 'next/image';
+import { toast } from 'sonner';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -43,15 +44,18 @@ export const SignUp: React.FC<Props> = ({ active, onSuccess }) => {
     if (active) {
       form.setFocus('firstName');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
   const onSubmit = form.handleSubmit(async values => {
     try {
-      await new Promise(r => setTimeout(r, 900));
+      toast.success('Welcome To Boomscore!', {
+        description: `Account Created Successfully`,
+      });
       onSuccess?.();
-    } catch {
-      // handle error
+    } catch(err:any) {
+      toast.error('Login failed', {
+        description: err?.message || 'Invalid email or password',
+      });
     }
   });
 
@@ -74,13 +78,7 @@ export const SignUp: React.FC<Props> = ({ active, onSuccess }) => {
               <FormItem>
                 <FormLabel className="sr-only">First name</FormLabel>
                 <FormControl>
-                  <Input
-                    id="first-name"
-                    placeholder="First name"
-                    {...field}
-                    className="rounded-2xl"
-                    variant="lg"
-                  />
+                  <Input id="first-name" placeholder="First name" {...field} variant="lg" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -94,13 +92,7 @@ export const SignUp: React.FC<Props> = ({ active, onSuccess }) => {
               <FormItem>
                 <FormLabel className="sr-only">Last name</FormLabel>
                 <FormControl>
-                  <Input
-                    id="last-name"
-                    placeholder="Last name"
-                    {...field}
-                    className="rounded-2xl"
-                    variant="lg"
-                  />
+                  <Input id="last-name" placeholder="Last name" {...field} variant="lg" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -120,7 +112,6 @@ export const SignUp: React.FC<Props> = ({ active, onSuccess }) => {
                   type="email"
                   placeholder="you@example.com"
                   {...field}
-                  className="rounded-2xl"
                   variant="lg"
                 />
               </FormControl>
@@ -141,7 +132,6 @@ export const SignUp: React.FC<Props> = ({ active, onSuccess }) => {
                   type="password"
                   placeholder="••••••••"
                   {...field}
-                  className="rounded-2xl"
                   variant="lg"
                 />
               </FormControl>
@@ -151,30 +141,21 @@ export const SignUp: React.FC<Props> = ({ active, onSuccess }) => {
         />
 
         <div className="flex items-center justify-center mt-2 w-full">
-          <Button
-            type="submit"
-            size="lg"
-            className="text-[#EAFAF4] bg-[#2bbb82] w-full"
-            disabled={isSubmitting}
-          >
+          <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
             {submitLabel}
           </Button>
         </div>
 
-        <div className='space-y-3'>
+        <div className="space-y-3">
           <div className="flex justify-center items-center gap-2 overflow-hidden">
             <Separator orientation="horizontal" />
             <h2 className="text-sm w-fit">Or </h2>
             <Separator orientation="horizontal" />
           </div>
           <div className="w-full">
-            <Button
-              type="button"
-              size="lg"
-              className="flex gap-2 justify-center items-center w-full bg-grey-900 text-black"
-            >
+            <Button type="button" size="lg" variant="foreground" className=" w-full ">
               <Image src="/google.svg" alt="google logo" width={24} height={24} />
-              <h2>Sign in with Google</h2>
+              Sign in with Google
             </Button>
           </div>
         </div>

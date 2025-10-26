@@ -31,14 +31,10 @@ const LOGIN_MUTATION = gql`
   }
 `;
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const signInSchema = z.object({
-  email: z.string().regex(emailRegex, { message: 'Please enter a valid email' }),
-  password: z.string().min(1, { message: 'Password is required' }),
-});
-
-type SignInValues = z.infer<typeof signInSchema>;
+type SignInValues = {
+  email: string;
+  password: string;
+};
 
 type Props = {
   active?: boolean;
@@ -46,10 +42,9 @@ type Props = {
 };
 
 export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
-  const [login, { loading, error }] = useMutation(LOGIN_MUTATION);
+  const [login, { loading }] = useMutation(LOGIN_MUTATION);
 
   const form = useForm<SignInValues>({
-    resolver: zodResolver(signInSchema),
     defaultValues: { email: '', password: '' },
   });
 
@@ -102,13 +97,7 @@ export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
             <FormItem>
               <FormLabel className="sr-only">Email</FormLabel>
               <FormControl>
-                <Input
-                  id="signin-email"
-                  placeholder="you@example.com"
-                  {...field}
-                  className="rounded-2xl"
-                  variant="lg"
-                />
+                <Input id="signin-email" placeholder="you@example.com" {...field} variant="lg" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -127,7 +116,6 @@ export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
                   type="password"
                   placeholder="••••••••"
                   {...field}
-                  className="rounded-2xl"
                   variant="lg"
                 />
               </FormControl>
@@ -137,12 +125,7 @@ export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
         />
 
         <div className="flex items-center justify-center mt-2 w-full">
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full"
-            disabled={isSubmitting}
-          >
+          <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
             {submitLabel}
           </Button>
         </div>
@@ -154,13 +137,9 @@ export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
             <Separator orientation="horizontal" />
           </div>
           <div className="w-full">
-            <Button
-              type="button"
-              size="lg"
-              className="flex gap-2 justify-center items-center w-full bg-grey-900 text-black"
-            >
+            <Button type="button" size="lg" variant="foreground" className=" w-full ">
               <Image src="/google.svg" alt="google logo" width={24} height={24} />
-              <h2>Sign in with Google</h2>
+              Sign in with Google
             </Button>
           </div>
         </div>

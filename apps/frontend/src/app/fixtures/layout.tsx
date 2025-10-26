@@ -37,7 +37,6 @@ export default function FixturesLayout({ children }: { children: React.ReactNode
             side="bottom"
             className="w-full px-4 sm:px-10 h-[80vh] sm:h-[calc(100vh-64px)] p-0 rounded-t-3xl border-0 dark:bg-[#191a1a]"
           >
-            {/* ✅ Hidden accessible title */}
             <VisuallyHidden>
               <SheetTitle>Chat Panel</SheetTitle>
             </VisuallyHidden>
