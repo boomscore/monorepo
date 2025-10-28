@@ -20,11 +20,16 @@ import { useMobile } from '@/lib/utils';
 type FixtureGamesProps = {
   today: string;
   navigateDate: (direction: 'prev' | 'next') => void;
-
   onDateChange?: (date: string) => void;
+  onToggleSearch?: () => void;
 };
 
-export const FixtureGames = ({ navigateDate, today, onDateChange }: FixtureGamesProps) => {
+export const FixtureGames = ({
+  navigateDate,
+  today,
+  onDateChange,
+  onToggleSearch,
+}: FixtureGamesProps) => {
   const [date, setDate] = useState<Date>(new Date(today));
   const isMobile = useMobile();
 
@@ -96,7 +101,7 @@ export const FixtureGames = ({ navigateDate, today, onDateChange }: FixtureGames
             </Button>
           </div>
         )}
-        <Button variant="ghost" className="rounded-full bg-card" size="lg">
+        <Button variant="ghost" className="rounded-full bg-card" size="lg" onClick={onToggleSearch}>
           <Search />
         </Button>
       </div>
