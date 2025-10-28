@@ -1,10 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { useForm } from 'react-hook-form';
-import { gql, useMutation } from '@apollo/client';
 import { toast } from 'sonner';
 import {
   Form,
@@ -18,23 +15,10 @@ import {
   Separator,
 } from '../ui';
 import Image from 'next/image';
+import { signInWithEmailPassword, type SignInInput } from '@/lib/auth/client';
+import { useRouter } from 'next/navigation';
 
-const LOGIN_MUTATION = gql`
-  mutation Login($input: LoginInput!) {
-    login(input: $input) {
-      user {
-        email
-        id
-      }
-      accessToken
-    }
-  }
-`;
-
-type SignInValues = {
-  email: string;
-  password: string;
-};
+type SignInValues = SignInInput;
 
 type Props = {
   active?: boolean;
@@ -42,8 +26,7 @@ type Props = {
 };
 
 export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
-  const [login, { loading }] = useMutation(LOGIN_MUTATION);
-
+  const router = useRouter();
   const form = useForm<SignInValues>({
     defaultValues: { email: '', password: '' },
   });
@@ -56,30 +39,19 @@ export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
 
   const onSubmit = form.handleSubmit(async values => {
     try {
-      const { data } = await login({
-        variables: {
-          input: {
-            email: values.email,
-            password: values.password,
-          },
-        },
+      const result = await signInWithEmailPassword(values);
+      toast.success('Login successful!', {
+        description: `Welcome back, ${result.user.email}`,
       });
-
-      if (data?.login?.accessToken) {
-        localStorage.setItem('accessToken', data.login.accessToken);
-        toast.success('Login successful!', {
-          description: `Welcome back, ${data.login.user.email}`,
-        });
-        onSuccess?.();
-      }
-    } catch (err: any) {
-      toast.error('Login failed', {
-        description: err?.message || 'Invalid email or password',
-      });
+      router.refresh();
+      onSuccess?.();
+    } catch (err) {
+      const description = (err as Error).message;
+      toast.error('Login failed', { description });
     }
   });
 
-  const isSubmitting = loading || form.formState.isSubmitting;
+  const isSubmitting = form.formState.isSubmitting;
   const submitLabel = isSubmitting ? 'Signing in...' : 'Sign in';
 
   return (
@@ -131,7 +103,14 @@ export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
             <Separator orientation="horizontal" />
           </div>
           <div className="w-full">
-            <Button type="button" variant="foreground" className=" w-full ">
+            <Button
+              type="button"
+              variant="foreground"
+              className=" w-full "
+              onClick={() => {
+                window.location.href = '/auth/google';
+              }}
+            >
               <Image src="/google.svg" alt="google logo" width={24} height={24} />
               Sign in with Google
             </Button>

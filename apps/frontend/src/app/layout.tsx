@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Onest, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ApolloProvider } from '@/lib/apollo';
-import { Navbar } from '@/components';
+import { Navbar } from '@/components/navbar';
 import { Toaster } from 'sonner';
 
 const geistSans = Onest({

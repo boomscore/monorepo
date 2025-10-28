@@ -9,6 +9,8 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { LoggerService } from './common/services/logger.service';
 import { AppModule } from './app.module';
 import { SportsSyncService } from './modules/sports/services/sports-sync.service';
+import type { RequestHandler } from 'express';
+import rateLimit from 'express-rate-limit';
 
 async function bootstrap() {
   try {
@@ -30,6 +32,41 @@ async function bootstrap() {
 
     app.use(compression());
     app.use(cookieParser());
+
+    if (process.env.TRUST_PROXY === '1') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (app as any).set('trust proxy', 1);
+    }
+
+    const authLimiter = rateLimit({
+      windowMs: Number(process.env.RATE_LIMIT_TTL || 60) * 1000,
+      max: Number(process.env.RATE_LIMIT_MAX || 100),
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
+    app.use(['/auth', '/auth/ba'], authLimiter);
+
+    try {
+      const nodeMod: unknown = require('better-auth/node');
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const coreMod: unknown = require('better-auth');
+      const toNodeHandler = (nodeMod as { toNodeHandler?: unknown }).toNodeHandler;
+      const createAuth = (coreMod as { createAuth?: unknown }).createAuth as
+        | ((config?: unknown) => { handler: unknown })
+        | undefined;
+      if (typeof toNodeHandler === 'function' && typeof createAuth === 'function') {
+        const auth = createAuth({
+          socialProviders: {
+            google: {
+              clientId: process.env.GOOGLE_CLIENT_ID,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            },
+          },
+        });
+        const handler = toNodeHandler(auth.handler) as RequestHandler;
+        app.use('/auth/ba', handler);
+      }
+    } catch (e) {}
 
     app.enableCors({
       origin: (origin, callback) => {

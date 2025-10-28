@@ -1,10 +1,4 @@
-/*
- * Sports Prediction Platform
- * Copyright (c) 2024
- * All rights reserved.
- */
-
-import { Resolver, Mutation, Args, Context } from '@nestjs/graphql';
+import { Resolver, Mutation, Query, Args, Context } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '@/modules/users/users.service';
@@ -12,6 +6,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { User } from '@/modules/users/entities/user.entity';
 import { CreateUserInput } from '@/modules/users/dto/user.dto';
 import { LoginInput, AuthResponse } from './dto/auth.dto';
+import { Request, Response } from 'express';
+import { setAuthCookie, clearAuthCookie } from './utils/cookies';
 
 @Resolver()
 export class AuthResolver {
@@ -20,9 +16,16 @@ export class AuthResolver {
     private readonly usersService: UsersService,
   ) {}
 
+  @Query(() => User, { nullable: true })
+  async me(@Context() ctx: { req: Request }): Promise<User | null> {
+    return this.authService.getUserFromRequest(ctx.req);
+  }
+
   @Mutation(() => AuthResponse)
-  async register(@Args('input') input: CreateUserInput): Promise<AuthResponse> {
-    // Check if user already exists
+  async register(
+    @Args('input') input: CreateUserInput,
+    @Context() ctx: { res: Response },
+  ): Promise<AuthResponse> {
     const existingUserByEmail = await this.usersService.findByEmail(input.email);
     if (existingUserByEmail) {
       throw new Error('User with this email already exists');
@@ -33,12 +36,11 @@ export class AuthResolver {
       throw new Error('Username is already taken');
     }
 
-    // Create user
     const user = await this.usersService.create(input);
-    
-    // Generate token
+
     const tokens = await this.authService.login(user);
-    
+    setAuthCookie(ctx.res, tokens.access_token);
+
     return {
       user,
       accessToken: tokens.access_token,
@@ -47,18 +49,21 @@ export class AuthResolver {
   }
 
   @Mutation(() => AuthResponse)
-  async login(@Args('input') input: LoginInput): Promise<AuthResponse> {
+  async login(
+    @Args('input') input: LoginInput,
+    @Context() ctx: { res: Response },
+  ): Promise<AuthResponse> {
     const user = await this.authService.validateUser(input.email, input.password);
-    
+
     if (!user) {
       throw new Error('Invalid credentials');
     }
 
     const tokens = await this.authService.login(user);
-    
-    // Update last login
+    setAuthCookie(ctx.res, tokens.access_token);
+
     await this.usersService.updateLastLogin(user.id);
-    
+
     return {
       user,
       accessToken: tokens.access_token,
@@ -68,8 +73,8 @@ export class AuthResolver {
 
   @Mutation(() => Boolean)
   @UseGuards(JwtAuthGuard)
-  async logout(@Context('user') user: User): Promise<boolean> {
-    // TODO: Implement proper logout with token blacklisting
+  async logout(@Context() ctx: { res: Response; user: User }): Promise<boolean> {
+    clearAuthCookie(ctx.res);
     return true;
   }
 }
