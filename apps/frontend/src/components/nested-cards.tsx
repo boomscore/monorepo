@@ -41,12 +41,15 @@ export const NestedCards = ({
   bottomCardClassName,
 }: NestedCardsProps) => {
   return (
-    <Card className={cn(nestedCardsVariants({ direction, padding }), ' gap-0', className)}>
+    <Card
+      className={cn(
+        nestedCardsVariants({ direction, padding }),
+        'bg-background gap-0 border border-border',
+        className,
+      )}
+    >
       <CardContent className="p-2">{header}</CardContent>
-      <Card
-        className={cn('bg-app-background p-0 border-none', bottomCardClassName)}
-        variant="secondary"
-      >
+      <Card className={cn('p-0 border-none', bottomCardClassName)} variant="secondary">
         <CardContent className="p-2">{footer}</CardContent>
       </Card>
     </Card>

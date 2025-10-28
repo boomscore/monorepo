@@ -6,8 +6,8 @@ export const cardVariants = cva('text-card-foreground flex flex-col gap-6 rounde
   variants: {
     variant: {
       outline: 'border border-border',
-      primary: 'bg-foreground',
-      secondary: 'bg-app-background',
+      primary: 'bg-background',
+      secondary: 'bg-app-background border border-border',
     },
     padding: {
       none: 'p-0',
@@ -32,14 +32,11 @@ export const cardVariants = cva('text-card-foreground flex flex-col gap-6 rounde
 
 export interface CardProps extends React.ComponentProps<'div'>, VariantProps<typeof cardVariants> {}
 
-function Card({ className, ...props }: CardProps) {
+function Card({ className, variant, padding, gap, ...props }: CardProps) {
   return (
     <div
       data-slot="card"
-      className={cn(
-        'text-card-foreground flex flex-col gap-6 rounded-xl border border-border py-6',
-        className,
-      )}
+      className={cn(cardVariants({ variant, padding, gap }), className)}
       {...props}
     />
   );
