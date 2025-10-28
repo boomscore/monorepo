@@ -25,6 +25,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    const backend = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+    return [
+      {
+        source: '/auth/:path*',
+        destination: `${backend}/auth/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
