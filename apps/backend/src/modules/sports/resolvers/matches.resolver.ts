@@ -105,6 +105,18 @@ export class MatchesResolver {
     return this.matchesService.getTodaysMatches();
   }
 
+  @Query(() => [Match])
+  async searchFixtures(
+    @Args('query') query: string,
+    @Args('leagueId', { nullable: true }) leagueId?: string,
+    @Args('date', { nullable: true }) date?: string,
+    @Args('isLive', { nullable: true }) isLive?: boolean,
+    @Args('limit', { nullable: true }) limit?: number,
+    @Args('offset', { nullable: true }) offset?: number,
+  ): Promise<Match[]> {
+    return this.matchesService.searchFixtures(query, { leagueId, date, isLive, limit, offset });
+  }
+
   @Query(() => Match, { nullable: true })
   async matchWithDetails(
     @Args('id') id: string,

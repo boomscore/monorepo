@@ -117,6 +117,62 @@ export class MatchesService {
     return matches;
   }
 
+  async searchFixtures(
+    query: string,
+    options: {
+      leagueId?: string;
+      date?: string;
+      isLive?: boolean;
+      limit?: number;
+      offset?: number;
+    } = {},
+  ): Promise<Match[]> {
+    const limit = options.limit ?? 20;
+    const offset = options.offset ?? 0;
+
+    const qb = this.matchRepository
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.homeTeam', 'homeTeam')
+      .leftJoinAndSelect('match.awayTeam', 'awayTeam')
+      .leftJoinAndSelect('match.league', 'league');
+
+    qb.where('(homeTeam.name ILIKE :q OR awayTeam.name ILIKE :q OR league.name ILIKE :q)', {
+      q: `%${query}%`,
+    });
+
+    if (options.leagueId) {
+      qb.andWhere('match.leagueId = :leagueId', { leagueId: options.leagueId });
+    }
+
+    if (options.date) {
+      if (options.date === 'today') {
+        const today = new Date().toISOString().split('T')[0];
+        qb.andWhere('DATE(match.startTime) = :date', { date: today });
+      } else {
+        qb.andWhere('DATE(match.startTime) = :date', { date: options.date });
+      }
+    }
+
+    if (options.isLive) {
+      qb.andWhere('match.status IN (:...liveStatuses)', {
+        liveStatuses: ['LIVE', 'HALFTIME'],
+      });
+    }
+
+    qb.orderBy('match.startTime', 'ASC').skip(offset).take(limit);
+
+    const matches = await qb.getMany();
+
+    this.logger.info('Search fixtures executed', {
+      service: 'matches',
+      query,
+      count: matches.length,
+      options,
+    });
+
+    return matches;
+  }
+
   async getLiveMatches(options: { leagueId?: string; limit?: number } = {}): Promise<Match[]> {
     return this.findMatches({
       isLive: true,
