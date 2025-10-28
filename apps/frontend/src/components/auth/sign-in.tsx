@@ -97,7 +97,7 @@ export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
             <FormItem>
               <FormLabel className="sr-only">Email</FormLabel>
               <FormControl>
-                <Input id="signin-email" placeholder="you@example.com" {...field} variant="lg" />
+                <Input id="signin-email" placeholder="you@example.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -111,13 +111,7 @@ export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
             <FormItem>
               <FormLabel className="sr-only">Password</FormLabel>
               <FormControl>
-                <Input
-                  id="signin-password"
-                  type="password"
-                  placeholder="••••••••"
-                  {...field}
-                  variant="lg"
-                />
+                <Input id="signin-password" type="password" placeholder="••••••••" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -125,7 +119,7 @@ export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
         />
 
         <div className="flex items-center justify-center mt-2 w-full">
-          <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
             {submitLabel}
           </Button>
         </div>
@@ -137,7 +131,7 @@ export const SignIn: React.FC<Props> = ({ active, onSuccess }) => {
             <Separator orientation="horizontal" />
           </div>
           <div className="w-full">
-            <Button type="button" size="lg" variant="foreground" className=" w-full ">
+            <Button type="button" variant="foreground" className=" w-full ">
               <Image src="/google.svg" alt="google logo" width={24} height={24} />
               Sign in with Google
             </Button>

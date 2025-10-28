@@ -15,33 +15,28 @@ export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel }) => {
   const [signInSuccess, setSignInSuccess] = useState(false);
   const [signUpSuccess, setSignUpSuccess] = useState(false);
 
+  const handleSignUpSuccess = () => {
+    setSignUpSuccess(true);
+    setActiveTab('signin');
+  };
+
   return (
     <div className="min-h-screen py-6 px-2 md:px-6 flex flex-col justify-center items-center">
-      <Card padding="sm"  className="w-full bg-background">
+      <Card padding="sm" className="w-full bg-background">
         <CardHeader>
           <div className="w-full">
             <Tabs
               defaultValue="signin"
+              value={activeTab}
               onValueChange={value => {
                 setActiveTab(value as 'signin' | 'signup');
               }}
             >
               <div className="flex justify-between">
-                <TabsList
-                  variant="default"
-                  shape="pill"
-                  size="lg"
-                  className="bg-background"
-                >
-                  <TabsTrigger value="signup" asChild>
-                    <Button type="button"  >
-                      Sign up
-                    </Button>
-                  </TabsTrigger>
+                <TabsList shape="pill" size="lg" className="bg-background">
+                  <TabsTrigger value="signup">Sign up</TabsTrigger>
 
-                  <TabsTrigger value="signin" asChild>
-                    <Button type="button" >Sign in</Button>
-                  </TabsTrigger>
+                  <TabsTrigger value="signin">Sign in</TabsTrigger>
                 </TabsList>
 
                 <div>
@@ -58,7 +53,7 @@ export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel }) => {
               </div>
 
               <TabsContent value="signup" className="mt-4">
-                <SignUp active={activeTab === 'signup'} onSuccess={() => setSignUpSuccess(true)} />
+                <SignUp active={activeTab === 'signup'} onSuccess={handleSignUpSuccess} />
               </TabsContent>
 
               <TabsContent value="signin" className="mt-4">
