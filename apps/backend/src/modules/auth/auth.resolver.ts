@@ -72,9 +72,22 @@ export class AuthResolver {
   }
 
   @Mutation(() => Boolean)
-  @UseGuards(JwtAuthGuard)
-  async logout(@Context() ctx: { res: Response; user: User }): Promise<boolean> {
+  async logout(@Context() ctx: { res: Response }): Promise<boolean> {
     clearAuthCookie(ctx.res);
     return true;
+  }
+
+  @Mutation(() => User)
+  @UseGuards(JwtAuthGuard)
+  async updateProfile(
+    @Context() ctx: { user: User },
+    @Args('firstName', { nullable: true }) firstName?: string,
+    @Args('lastName', { nullable: true }) lastName?: string,
+  ): Promise<User> {
+    const updates: Partial<User> = {};
+    if (firstName !== undefined) updates.firstName = firstName;
+    if (lastName !== undefined) updates.lastName = lastName;
+
+    return this.usersService.update(ctx.user.id, updates);
   }
 }

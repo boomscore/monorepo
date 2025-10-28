@@ -82,6 +82,19 @@ const LOGOUT_MUTATION = gql`
   }
 `;
 
+const UPDATE_PROFILE_MUTATION = gql`
+  mutation UpdateProfile($firstName: String, $lastName: String) {
+    updateProfile(firstName: $firstName, lastName: $lastName) {
+      id
+      email
+      username
+      firstName
+      lastName
+      avatar
+    }
+  }
+`;
+
 export async function getCurrentUser(): Promise<MeResponse> {
   const client = getClient();
   const { data } = await client.query<{ me: AuthUser | null }>({
@@ -118,4 +131,19 @@ export async function logout(): Promise<{ success: boolean }> {
     mutation: LOGOUT_MUTATION,
   });
   return { success: data?.logout ?? false };
+}
+
+export type UpdateProfileInput = {
+  firstName?: string;
+  lastName?: string;
+};
+
+export async function updateProfile(input: UpdateProfileInput): Promise<AuthUser> {
+  const client = getClient();
+  const { data } = await client.mutate<{ updateProfile: AuthUser }>({
+    mutation: UPDATE_PROFILE_MUTATION,
+    variables: input,
+  });
+  if (!data?.updateProfile) throw new Error('Update failed');
+  return data.updateProfile;
 }

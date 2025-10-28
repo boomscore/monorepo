@@ -37,14 +37,13 @@ const navigation = [
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col lg:flex-row min-h-screen">
-      <div className="lg:max-w-[362px] w-full lg:mx-auto border-b border-border lg:border-b-0 lg:border-r bg-card">
+      <div className="lg:max-w-[362px] w-full lg:mx-auto border-b border-border lg:border-b-0 lg:border-r">
         <div className="p-6">
-          <h1 className="text-2xl font-bold mb-8">Account Settings</h1>
 
-          <nav className="space-y-8">
+          <nav className="space-y-6">
             {navigation.map(section => (
               <div key={section.title}>
-                <h3 className="text-sm font-medium text-muted-foreground mb-3">{section.title}</h3>
+                <h3 className="text-sm font-medium text-text-grey">{section.title}</h3>
                 <ul className="space-y-1">
                   {section.links.map(link => {
                     const IconComponent = link.icon;
@@ -52,9 +51,11 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
                       <li key={link.name}>
                         <Link
                           href={link.href}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                          className="flex items-center gap-3 p-2 rounded-lg text-sm text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                         >
-                          <IconComponent className="h-4 w-4" />
+                          <span className="bg-card p-2 rounded-full">
+                            <IconComponent size={20} />
+                          </span>
                           {link.name}
                         </Link>
                       </li>

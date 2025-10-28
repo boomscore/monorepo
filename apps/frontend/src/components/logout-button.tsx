@@ -10,10 +10,11 @@ export const LogoutButton = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      router.refresh(); // Refresh server components to show logged out state
-      router.push('/'); // Redirect to home
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.warn('Logout request failed (likely expired session):', error);
+    } finally {
+      router.refresh();
+      router.push('/');
     }
   };
 
