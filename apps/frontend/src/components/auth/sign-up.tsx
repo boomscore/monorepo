@@ -17,23 +17,8 @@ import {
 } from '../ui';
 import Image from 'next/image';
 import { toast } from 'sonner';
-import { gql, useMutation } from '@apollo/client';
-
-const SIGN_UP_MUTATION = gql`
-  mutation Register($input: CreateUserInput!) {
-    register(input: $input) {
-      user {
-        firstName
-        email
-        lastName
-        username
-        id
-      }
-      message
-      accessToken
-    }
-  }
-`;
+import { registerWithEmailPassword, type SignUpInput } from '@/lib/auth/client';
+import { useRouter } from 'next/navigation';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -51,7 +36,7 @@ const signUpSchema = z.object({
     ),
 });
 
-type SignUpValues = z.infer<typeof signUpSchema>;
+type SignUpValues = z.infer<typeof signUpSchema> & SignUpInput;
 
 type Props = {
   active?: boolean;
@@ -59,8 +44,7 @@ type Props = {
 };
 
 export const SignUp: React.FC<Props> = ({ active, onSuccess }) => {
-  const [register] = useMutation(SIGN_UP_MUTATION);
-
+  const router = useRouter();
   const form = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: { firstName: '', lastName: '', username: '', email: '', password: '' },
@@ -74,28 +58,21 @@ export const SignUp: React.FC<Props> = ({ active, onSuccess }) => {
 
   const onSubmit = form.handleSubmit(async values => {
     try {
-      const { data } = await register({
-        variables: {
-          input: {
-            email: values.email,
-            username: values.username,
-            password: values.password,
-            firstName: values.firstName,
-            lastName: values.lastName,
-          },
-        },
+      await registerWithEmailPassword({
+        email: values.email,
+        username: values.username,
+        password: values.password,
+        firstName: values.firstName,
+        lastName: values.lastName,
       });
-      if (data?.register?.accessToken) {
-        localStorage.setItem('accessToken', data.register.accessToken);
-        toast.success('Welcome to Boomscore!', {
-          description: `Account created successfully!`,
-        });
-        onSuccess?.();
-      }
-    } catch (err: any) {
-      toast.error('Registration failed', {
-        description: err?.message || 'Unable to create account',
+      toast.success('Welcome to Boomscore!', {
+        description: `Account created successfully!`,
       });
+      router.refresh();
+      onSuccess?.();
+    } catch (err: unknown) {
+      const description = err instanceof Error ? err.message : 'Unable to create account';
+      toast.error('Registration failed', { description });
     }
   });
 
@@ -195,7 +172,14 @@ export const SignUp: React.FC<Props> = ({ active, onSuccess }) => {
             <Separator orientation="horizontal" />
           </div>
           <div className="w-full">
-            <Button type="button" variant="foreground" className=" w-full ">
+            <Button
+              type="button"
+              variant="foreground"
+              className=" w-full "
+              onClick={() => {
+                window.location.href = '/auth/google';
+              }}
+            >
               <Image src="/google.svg" alt="google logo" width={24} height={24} />
               Sign in with Google
             </Button>
