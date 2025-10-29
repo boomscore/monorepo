@@ -39,7 +39,17 @@ export class AuthService {
 
   async getUserFromRequest(req: Request): Promise<User | null> {
     const cookieName = process.env.AUTH_COOKIE_NAME || 'bs_token';
-    const token = (req.cookies?.[cookieName] as string | undefined) || undefined;
+    let token = (req.cookies?.[cookieName] as string | undefined) || undefined;
+
+    if (!token) {
+      const authHeader = req.headers?.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      } else if (authHeader && authHeader.split('.').length === 3) {
+        token = authHeader;
+      }
+    }
+
     if (!token) return null;
     return this.getUserFromToken(token);
   }
