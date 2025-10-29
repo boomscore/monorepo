@@ -3,7 +3,7 @@
 import React from 'react';
 import { gql } from '@apollo/client';
 import { FixtureCard } from './fixture-card';
-import { Button, NoFixtures, Skeleton } from '@/components';
+import { Button, Skeleton } from '@/components';
 import { useGroupedFixtures, useInfiniteScroll } from '../hooks';
 
 export const GET_GROUPED_FIXTURES = gql`
@@ -84,13 +84,11 @@ export const GET_GROUPED_FIXTURES = gql`
 interface FixturesListProps {
   initialDate?: string;
   initialIsToday?: boolean;
-  searchQuery?: string;
 }
 
 export const FixturesList: React.FC<FixturesListProps> = ({
   initialDate,
   initialIsToday = false,
-  searchQuery = '',
 }) => {
   const effectiveDate = React.useMemo(() => {
     return initialDate ?? new Date().toISOString().split('T')[0];
@@ -108,38 +106,6 @@ export const FixturesList: React.FC<FixturesListProps> = ({
     loading,
     isLoadingMore,
   });
-
-  // Filter matches based on search query
-  const filteredGroupedMatches = React.useMemo(() => {
-    if (!searchQuery.trim()) {
-      return groupedMatches;
-    }
-
-    const query = searchQuery.toLowerCase().trim();
-
-    return groupedMatches
-      .map(group => {
-        const filteredMatches = group.matches.filter(match => {
-          const homeTeamName = match.homeTeam.name.toLowerCase();
-          const awayTeamName = match.awayTeam.name.toLowerCase();
-          const leagueName = (group.league.displayName || group.league.name).toLowerCase();
-          const country = group.league.country?.toLowerCase() || '';
-
-          return (
-            homeTeamName.includes(query) ||
-            awayTeamName.includes(query) ||
-            leagueName.includes(query) ||
-            country.includes(query)
-          );
-        });
-
-        return {
-          ...group,
-          matches: filteredMatches,
-        };
-      })
-      .filter(group => group.matches.length > 0);
-  }, [groupedMatches, searchQuery]);
 
   if (loading && groupedMatches.length === 0) {
     return (
@@ -168,17 +134,9 @@ export const FixturesList: React.FC<FixturesListProps> = ({
     );
   }
 
-  if (searchQuery.trim() && filteredGroupedMatches.length === 0) {
-    return (
-      <div >
-      <NoFixtures searchQuery={searchQuery} />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {filteredGroupedMatches.map(({ league, matches: leagueMatches }, groupIndex) => (
+      {groupedMatches.map(({ league, matches: leagueMatches }, groupIndex) => (
         <div key={league.id} className="space-y-3">
           <div>
             <h3 className="font-medium text-base">{league.displayName || league.name}</h3>
@@ -188,8 +146,7 @@ export const FixturesList: React.FC<FixturesListProps> = ({
           <div className="grid gap-3">
             {leagueMatches.map((match, matchIndex) => {
               const isLastMatch =
-                groupIndex === filteredGroupedMatches.length - 1 &&
-                matchIndex === leagueMatches.length - 1;
+                groupIndex === groupedMatches.length - 1 && matchIndex === leagueMatches.length - 1;
 
               return (
                 <div

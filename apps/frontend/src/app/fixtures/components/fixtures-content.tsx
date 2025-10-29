@@ -8,6 +8,7 @@ import { X } from 'lucide-react';
 
 import { FixtureGames } from './fixture-game';
 import { FixtureSportTypeTabs } from './fixtures-sport-type-tab';
+import { SearchFixtures } from './search-fixtures';
 
 export const FixturesContent = () => {
   const searchParams = useSearchParams();
@@ -58,6 +59,11 @@ export const FixturesContent = () => {
     updateDateInUrl(date);
   };
 
+  const handleCloseSearch = () => {
+    setShowSearch(false);
+    setSearchQuery('');
+  };
+
   if (!selectedDate) {
     return (
       <div className="p-4">
@@ -71,7 +77,7 @@ export const FixturesContent = () => {
   }
 
   return (
-    <div className="flex-1 ">
+    <div className="flex-1 relative">
       <div className="p-2 px-4">
         {showSearch && (
           <div className="relative">
@@ -80,12 +86,13 @@ export const FixturesContent = () => {
               placeholder="Search for games..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
+              autoFocus
             />
             <Button
               size="icon"
               variant="ghost"
               className="absolute right-1 top-1/2 -translate-y-1/2"
-              onClick={() => setShowSearch(false)}
+              onClick={handleCloseSearch}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -109,12 +116,15 @@ export const FixturesContent = () => {
       <Separator />
 
       <div className="p-4">
-        <FixturesList
-          key={selectedDate}
-          initialDate={selectedDate}
-          initialIsToday={selectedDate === new Date().toISOString().split('T')[0]}
-          searchQuery={searchQuery}
-        />
+        {showSearch ? (
+          <SearchFixtures selectedDate={selectedDate} searchQuery={searchQuery} />
+        ) : (
+          <FixturesList
+            key={selectedDate}
+            initialDate={selectedDate}
+            initialIsToday={selectedDate === new Date().toISOString().split('T')[0]}
+          />
+        )}
       </div>
     </div>
   );
