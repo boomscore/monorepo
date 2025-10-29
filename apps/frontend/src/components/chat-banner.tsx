@@ -1,12 +1,42 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from './ui';
-import { AuthBanner } from './auth';
+import { AuthBanner } from './auth/auth';
+import { Chat } from './chat';
+import { getCurrentUser } from '@/lib/auth/client';
 
 export const ChatBanner: React.FC = () => {
   const [showAuth, setShowAuth] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const checkAuth = async () => {
+    try {
+      await getCurrentUser();
+      setIsAuthenticated(true);
+    } catch (error) {
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    checkAuth();
+
+    const handleStorageChange = () => {
+      setIsLoading(true);
+      checkAuth();
+    };
+
+    window.addEventListener('focus', checkAuth);
+
+    return () => {
+      window.removeEventListener('focus', checkAuth);
+    };
+  }, []);
 
   const handleStart = () => {
     setShowAuth(true);
@@ -15,6 +45,37 @@ export const ChatBanner: React.FC = () => {
   const handleCancel = () => {
     setShowAuth(false);
   };
+
+  const handleAuthSuccess = () => {
+    setShowAuth(false);
+    setIsLoading(true);
+    getCurrentUser()
+      .then(() => {
+        setIsAuthenticated(true);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+        setIsLoading(false);
+      });
+  };
+
+ 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col justify-center items-center">
+        <div className="text-text-grey">Loading...</div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col ">
+        <Chat />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center">
@@ -45,7 +106,7 @@ export const ChatBanner: React.FC = () => {
 
       {showAuth && (
         <div className="mx-auto mt-2 w-full md:max-w-[481px]">
-          <AuthBanner onCancel={handleCancel} />
+          <AuthBanner onCancel={handleCancel} onSuccess={handleAuthSuccess} />
         </div>
       )}
     </div>

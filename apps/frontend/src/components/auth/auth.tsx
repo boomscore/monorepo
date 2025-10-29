@@ -8,9 +8,10 @@ import { SignIn } from './sign-in';
 
 type AuthBannerProps = {
   onCancel?: () => void;
+  onSuccess?: () => void;
 };
 
-export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel }) => {
+export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel, onSuccess }) => {
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
   const [signInSuccess, setSignInSuccess] = useState(false);
   const [signUpSuccess, setSignUpSuccess] = useState(false);
@@ -18,6 +19,12 @@ export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel }) => {
   const handleSignUpSuccess = () => {
     setSignUpSuccess(true);
     setActiveTab('signin');
+    onSuccess?.();
+  };
+
+  const handleSignInSuccess = () => {
+    setSignInSuccess(true);
+    onSuccess?.();
   };
 
   return (
@@ -57,7 +64,7 @@ export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel }) => {
               </TabsContent>
 
               <TabsContent value="signin" className="mt-4">
-                <SignIn active={activeTab === 'signin'} onSuccess={() => setSignInSuccess(true)} />
+                <SignIn active={activeTab === 'signin'} onSuccess={handleSignInSuccess} />
               </TabsContent>
             </Tabs>
           </div>
