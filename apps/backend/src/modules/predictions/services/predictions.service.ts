@@ -63,6 +63,12 @@ export class PredictionsService {
 
     for (const type of input.predictionTypes) {
       try {
+        this.logger.info(`Generating ${type} prediction`, {
+          service: 'predictions',
+          matchId: input.matchId,
+          type,
+        });
+
         const prediction = await this.generateSinglePrediction(
           user,
           match,
@@ -70,13 +76,24 @@ export class PredictionsService {
           input.scenario,
           input.includeReasoning,
         );
+
+        this.logger.info(`Successfully generated ${type} prediction`, {
+          service: 'predictions',
+          matchId: input.matchId,
+          type,
+          predictionId: prediction.id,
+        });
+
         predictions.push(prediction);
       } catch (error) {
         this.logger.error(`Failed to generate ${type} prediction`, error.stack, {
           service: 'predictions',
           matchId: input.matchId,
           type,
+          errorMessage: error.message,
         });
+        // Re-throw the error so we can see what's failing
+        throw error;
       }
     }
 
@@ -222,48 +239,123 @@ export class PredictionsService {
     scenario?: string,
     includeReasoning = false,
   ): Promise<Prediction> {
-    // Generate prompt for this prediction type
-    const promptResult = this.promptService.generatePredictionPrompt({
-      match,
-      homeTeam: match.homeTeam, // Add required homeTeam
-      awayTeam: match.awayTeam, // Add required awayTeam
-      predictionTypes: [type],
-      scenario,
-      includeReasoning,
-    });
+    try {
+      this.logger.info('Starting single prediction generation', {
+        service: 'predictions',
+        matchId: match.id,
+        type,
+        homeTeam: match.homeTeam?.name,
+        awayTeam: match.awayTeam?.name,
+      });
 
-    // Get AI prediction
-    const response = await this.openaiProvider.generatePrediction({
-      prompt:
-        typeof promptResult === 'string'
-          ? promptResult
-          : (promptResult as any).content || promptResult.toString(),
-      temperature: 0.7,
-      maxTokens: 1000,
-      responseFormat: 'json_object',
-    });
-
-    // Parse response
-    const predictionData = JSON.parse(response.content);
-
-    // Create and save prediction
-    const prediction = this.predictionRepository.create({
-      userId: user.id,
-      matchId: match.id,
-      type,
-      outcome: predictionData.outcome as any, // Cast to enum
-      confidence: predictionData.confidence || 0.5,
-      reasoning: includeReasoning ? predictionData.reasoning : null,
-      metadata: {
+      // Generate prompt for this prediction type
+      const promptResult = this.promptService.generatePredictionPrompt({
+        match,
+        homeTeam: match.homeTeam, // Add required homeTeam
+        awayTeam: match.awayTeam, // Add required awayTeam
+        predictionTypes: [type],
         scenario,
-        model: response.model,
-        promptTokens: response.usage.promptTokens,
-        completionTokens: response.usage.completionTokens,
-        cost: response.cost,
-      },
-      status: PredictionStatus.PENDING,
-    });
+        includeReasoning,
+      });
 
-    return await this.predictionRepository.save(prediction);
+      this.logger.info('Generated prompt for prediction', {
+        service: 'predictions',
+        matchId: match.id,
+        type,
+        promptLength: promptResult.fullPrompt?.length || 0,
+      });
+
+      // Get AI prediction
+      const response = await this.openaiProvider.generatePrediction({
+        prompt: promptResult.fullPrompt || promptResult.toString(),
+        temperature: 0.7,
+        maxTokens: 1000,
+        responseFormat: 'json_object',
+      });
+
+      this.logger.info('Received OpenAI response', {
+        service: 'predictions',
+        matchId: match.id,
+        type,
+        responseLength: response.content?.length || 0,
+        model: response.model,
+      });
+
+      // Parse response
+      let predictionData;
+      try {
+        predictionData = JSON.parse(response.content);
+        this.logger.info('Parsed prediction data', {
+          service: 'predictions',
+          matchId: match.id,
+          type,
+          predictionData,
+        });
+      } catch (parseError) {
+        this.logger.error('Failed to parse OpenAI response as JSON', parseError.stack, {
+          service: 'predictions',
+          matchId: match.id,
+          type,
+          responseContent: response.content,
+        });
+        throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
+      }
+
+      // Extract prediction data - handle both direct format and nested format
+      let actualPrediction = predictionData;
+      if (predictionData.predictions && Array.isArray(predictionData.predictions)) {
+        // OpenAI returned nested format with predictions array
+        actualPrediction =
+          predictionData.predictions.find(p => p.type === type) || predictionData.predictions[0];
+        if (!actualPrediction) {
+          throw new Error('No prediction found in OpenAI response for the requested type');
+        }
+      }
+
+      // Validate required fields
+      if (!actualPrediction.outcome) {
+        throw new Error('OpenAI response missing required field: outcome');
+      }
+
+      // Create and save prediction
+      const prediction = this.predictionRepository.create({
+        userId: user.id,
+        matchId: match.id,
+        type,
+        outcome: actualPrediction.outcome as any, // Cast to enum
+        confidence: actualPrediction.confidence || 0.5,
+        reasoning: includeReasoning ? actualPrediction.reasoning : null,
+        metadata: {
+          scenario,
+          model: response.model,
+          promptTokens: response.usage.promptTokens,
+          completionTokens: response.usage.completionTokens,
+          cost: response.cost,
+          odds: actualPrediction.odds,
+          summary: predictionData.summary,
+          keyFactors: predictionData.keyFactors,
+        },
+        status: PredictionStatus.PENDING,
+      });
+
+      const savedPrediction = await this.predictionRepository.save(prediction);
+
+      this.logger.info('Saved prediction to database', {
+        service: 'predictions',
+        matchId: match.id,
+        type,
+        predictionId: savedPrediction.id,
+      });
+
+      return savedPrediction;
+    } catch (error) {
+      this.logger.error('Error in generateSinglePrediction', error.stack, {
+        service: 'predictions',
+        matchId: match.id,
+        type,
+        errorMessage: error.message,
+      });
+      throw error;
+    }
   }
 }

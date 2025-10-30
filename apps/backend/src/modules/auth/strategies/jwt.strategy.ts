@@ -12,6 +12,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     super({
       jwtFromRequest: req => {
+        // First try to get from cookie (browser/Apollo Client)
         const cookieName = process.env.AUTH_COOKIE_NAME || 'bs_token';
         const cookieToken = req?.cookies?.[cookieName];
 
@@ -19,11 +20,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           return cookieToken;
         }
 
+        // Fallback to Authorization header (GraphQL Playground)
         const authHeader = req?.headers?.authorization;
 
         if (authHeader?.startsWith('Bearer ')) {
           const token = authHeader.substring(7);
           return token;
+        }
+
+        // Handle direct token without Bearer prefix (GraphQL Playground)
+        if (authHeader && authHeader.split('.').length === 3) {
+          return authHeader;
         }
 
         return null;

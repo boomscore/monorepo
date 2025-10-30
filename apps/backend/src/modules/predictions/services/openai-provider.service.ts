@@ -74,7 +74,7 @@ interface ChatCompletionResponse {
 @Injectable()
 export class OpenAIProviderService {
   private readonly openai: OpenAI;
-  private readonly model: string = 'gpt-4o'; // Using GPT-4o (latest available)
+  private readonly model: string;
   private readonly costPer1kTokens = {
     'gpt-5': { input: 0.03, output: 0.06 }, // GPT-5 pricing (estimated)
     'gpt-4o': { input: 0.025, output: 0.05 }, // GPT-4o pricing
@@ -90,6 +90,14 @@ export class OpenAIProviderService {
       throw new Error('OpenAI API key is required');
     }
 
+    this.model = this.configService.get<string>('OPENAI_MODEL') || 'gpt-4o';
+
+    this.logger.info('Initializing OpenAI provider', {
+      service: 'openai-provider',
+      model: this.model,
+      apiKeyLength: apiKey.length,
+    });
+
     this.openai = new OpenAI({
       apiKey,
     });
@@ -99,6 +107,15 @@ export class OpenAIProviderService {
     const startTime = Date.now();
 
     try {
+      this.logger.info('Starting OpenAI prediction request', {
+        service: 'openai-provider',
+        model: this.model,
+        promptLength: request.prompt?.length || 0,
+        temperature: request.temperature || 0.7,
+        maxTokens: request.maxTokens || 1000,
+        responseFormat: request.responseFormat,
+      });
+
       const completion = await this.openai.chat.completions.create({
         model: this.model,
         messages: [
