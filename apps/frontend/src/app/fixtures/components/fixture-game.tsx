@@ -16,7 +16,7 @@ import {
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { useMobile } from '@/lib/utils';
-
+import { FixturesSearch } from './fixtures-search';
 type FixtureGamesProps = {
   today: string;
   navigateDate: (direction: 'prev' | 'next') => void;
@@ -26,6 +26,7 @@ type FixtureGamesProps = {
 
 export const FixtureGames = ({ navigateDate, today, onDateChange }: FixtureGamesProps) => {
   const [date, setDate] = useState<Date>(new Date(today));
+  const [searchOpen, setSearchOpen] = useState(false);
   const isMobile = useMobile();
 
   useEffect(() => {
@@ -96,10 +97,17 @@ export const FixtureGames = ({ navigateDate, today, onDateChange }: FixtureGames
             </Button>
           </div>
         )}
-        <Button variant="ghost" className="rounded-full bg-card" size="lg">
+        <Button
+          variant="ghost"
+          className="rounded-full bg-card"
+          size="lg"
+          onClick={() => setSearchOpen(true)}
+        >
           <Search />
         </Button>
       </div>
+
+      <FixturesSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   );
 };
