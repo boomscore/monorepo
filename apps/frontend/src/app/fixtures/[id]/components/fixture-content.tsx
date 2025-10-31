@@ -9,7 +9,6 @@ import { CompactStandings } from './compact-standings';
 import { HeadToHead } from './head-to-head';
 import { RecentUpcoming } from './recent-upcoming';
 import { MatchStatistics } from './match-statistics';
-import { MatchEvents } from './match-events';
 import { MatchCommentary } from './match-commentary';
 import { MatchTimeline } from './match-timeline';
 import { MatchLineups } from './match-lineups';
