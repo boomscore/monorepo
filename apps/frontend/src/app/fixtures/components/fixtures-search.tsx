@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { gql, useLazyQuery } from '@apollo/client';
-import { Sheet, SheetContent, SheetTitle, Input } from '@/components/ui';
+import { Sheet, SheetContent, SheetTitle, Input, Separator, Spinner } from '@/components/ui';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Search, X } from 'lucide-react';
 import { FixtureCard } from './fixture-card';
@@ -131,26 +131,7 @@ export const FixturesSearch: React.FC<FixturesSearchProps> = ({ open, onOpenChan
     onOpenChange(isOpen);
   };
 
-  // Group fixtures by league
-  const groupedFixtures = React.useMemo(() => {
-    if (!searchResults) return [];
-
-    const grouped = searchResults.reduce((acc: any, fixture: SearchFixture) => {
-      const leagueId = fixture.league.id;
-      if (!acc[leagueId]) {
-        acc[leagueId] = {
-          league: fixture.league,
-          matches: [],
-        };
-      }
-      acc[leagueId].matches.push(fixture);
-      return acc;
-    }, {});
-
-    return Object.values(grouped);
-  }, [searchResults]);
-
-  const hasResults = groupedFixtures.length > 0;
+  const hasResults = searchResults && searchResults.length > 0;
   const showEmptyState =
     searchQuery.trim().length >= 2 && !loading && !hasResults && searchResults !== null;
 
@@ -165,9 +146,10 @@ export const FixturesSearch: React.FC<FixturesSearchProps> = ({ open, onOpenChan
         <VisuallyHidden>
           <SheetTitle>Search Fixtures</SheetTitle>
         </VisuallyHidden>
-        <div className="flex h-full">
-          <div className=" max-w-[600px] flex flex-col flex-1 w-full h-full overflow-y-auto   bg-app-background">
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="flex h-full w-full">
+          <div className="max-w-[600px] flex flex-col flex-1 w-full bg-app-background">
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm flex flex-col gap-6 px-2">
+              <Separator orientation="horizontal" />
               <div>
                 <div className="flex items-center gap-3 p-4 w-full">
                   <div className="relative w-full">
@@ -191,16 +173,17 @@ export const FixturesSearch: React.FC<FixturesSearchProps> = ({ open, onOpenChan
                   </div>
                 </div>
               </div>
-              <div className="p-2 px-4 border-y border-border">
-                <FixtureSportTypeTabs />
-              </div>
+
+              <Separator orientation="horizontal" />
+              <FixtureSportTypeTabs />
+              <Separator orientation="horizontal" />
             </div>
 
-            <div className="flex-1 overflow-y-auto no-scrollbar h-full">
-              <div className=" px-4 py-6">
+            <div className="flex-1 overflow-y-auto no-scrollbar overflow-x-hidden">
+              <div className="px-4 py-6 pb-20">
                 {loading && (
                   <div className="flex flex-col items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <Spinner className="h-8 w-8" />
                     <p className="text-sm text-muted-foreground mt-4">Searching...</p>
                   </div>
                 )}
@@ -220,35 +203,9 @@ export const FixturesSearch: React.FC<FixturesSearchProps> = ({ open, onOpenChan
                 )}
 
                 {hasResults && (
-                  <div className="space-y-6 over">
-                    {groupedFixtures.map((group: any) => (
-                      <div key={group.league.id} className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          {group.league.logo && (
-                            <div className="w-6 h-6 relative flex-shrink-0">
-                              <Image
-                                src={group.league.logo}
-                                alt={`${group.league.name} logo`}
-                                width={24}
-                                height={24}
-                                className="object-contain"
-                              />
-                            </div>
-                          )}
-                          <div>
-                            <h3 className="font-medium text-base">
-                              {group.league.displayName || group.league.name}
-                            </h3>
-                            <p className="text-xs text-muted-foreground">{group.league.country}</p>
-                          </div>
-                        </div>
-
-                        <div className="grid gap-3">
-                          {group.matches.map((match: SearchFixture) => (
-                            <FixtureCard key={match.id} match={match as any} showDate />
-                          ))}
-                        </div>
-                      </div>
+                  <div className="grid gap-3">
+                    {searchResults?.map((match: SearchFixture) => (
+                      <FixtureCard key={match.id} match={match as any} showDate />
                     ))}
                   </div>
                 )}
