@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { gql, useLazyQuery } from '@apollo/client';
-import { Sheet, SheetContent, SheetTitle, Input, Separator, Spinner } from '@/components/ui';
+import { Sheet, SheetContent, SheetTitle, Input, Separator, Spinner, Button } from '@/components/ui';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Search, X } from 'lucide-react';
 import { FixtureCard } from './fixture-card';
 import { NoFixtures } from '@/components';
 import Image from 'next/image';
 import { FixtureSportTypeTabs } from './fixtures-sport-type-tab';
+import { debounce } from '@/lib/utils';
 
 const SEARCH_FIXTURES = gql`
   query SearchFixtures($query: String!, $date: String, $isLive: Boolean) {
@@ -104,17 +105,25 @@ export const FixturesSearch: React.FC<FixturesSearchProps> = ({ open, onOpenChan
     },
   });
 
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((query: string) => {
+        if (query.trim().length >= 2) {
+          searchFixtures({
+            variables: {
+              query: query.trim(),
+            },
+          });
+        } else {
+          setSearchResults(null);
+        }
+      }, 2000),
+    [searchFixtures],
+  );
+
   const handleSearch = (value: string) => {
     setSearchQuery(value);
-    if (value.trim().length >= 2) {
-      searchFixtures({
-        variables: {
-          query: value.trim(),
-        },
-      });
-    } else {
-      setSearchResults(null);
-    }
+    debouncedSearch(value);
   };
 
   const handleClose = () => {
@@ -163,13 +172,15 @@ export const FixturesSearch: React.FC<FixturesSearchProps> = ({ open, onOpenChan
                       autoFocus
                     />
 
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={handleClose}
                       className="p-2 rounded-full hover:bg-accent transition-colors absolute right-4 top-1/2 -translate-y-1/2"
                       aria-label="Close search"
                     >
                       <X className="h-5 w-5" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
