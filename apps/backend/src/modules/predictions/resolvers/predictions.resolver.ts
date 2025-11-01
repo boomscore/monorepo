@@ -1,13 +1,9 @@
-/*
- *
- * Copyright (c) 2024
- * All rights reserved.
- */
-
 import { Resolver, Mutation, Query, Args, Context } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { PredictionsService, PredictionFilters } from '../services/predictions.service';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
+import { User } from '@/modules/users/entities/user.entity';
 import { Prediction } from '../entities/prediction.entity';
 import { GeneratePredictionInput, PredictionAnalytics } from '../dto/prediction.dto';
 
@@ -19,9 +15,8 @@ export class PredictionsResolver {
   @Mutation(() => [Prediction])
   async generatePredictions(
     @Args('input') input: GeneratePredictionInput,
-    @Context() context: any,
+    @CurrentUser() user: User,
   ): Promise<Prediction[]> {
-    const user = context.req.user;
     return this.predictionsService.generatePrediction(user, input);
   }
 
