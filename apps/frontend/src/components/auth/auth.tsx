@@ -8,9 +8,10 @@ import { SignIn } from './sign-in';
 
 type AuthBannerProps = {
   onCancel?: () => void;
+  onSuccess?: () => void;
 };
 
-export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel }) => {
+export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel, onSuccess }) => {
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
   const [signInSuccess, setSignInSuccess] = useState(false);
   const [signUpSuccess, setSignUpSuccess] = useState(false);
@@ -20,8 +21,13 @@ export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel }) => {
     setActiveTab('signin');
   };
 
+  const handleSignInSuccess = () => {
+    setSignInSuccess(true);
+    onSuccess?.();
+  };
+
   return (
-    <div className="min-h-screen py-6 px-2 md:px-6 flex flex-col justify-center items-center">
+    <div className=" py-6 px-2 md:px-6 flex flex-col justify-center items-center">
       <Card padding="sm" className="w-full bg-background">
         <CardHeader>
           <div className="w-full">
@@ -57,7 +63,7 @@ export const AuthBanner: React.FC<AuthBannerProps> = ({ onCancel }) => {
               </TabsContent>
 
               <TabsContent value="signin" className="mt-4">
-                <SignIn active={activeTab === 'signin'} onSuccess={() => setSignInSuccess(true)} />
+                <SignIn active={activeTab === 'signin'} onSuccess={handleSignInSuccess} />
               </TabsContent>
             </Tabs>
           </div>
