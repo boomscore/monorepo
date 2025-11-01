@@ -17,7 +17,7 @@ export const ChatBanner: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center">
+    <div className="flex flex-col justify-center items-center">
       {!showAuth && (
         <div className="flex flex-col justify-center items-center md:w-[481px] h-[437px] mt-5 mx-auto">
           {/* Dark-mode logo (hidden in light mode) */}

@@ -4,3 +4,4 @@ export * from './fixtures-sport-type';
 export * from './fixtures-sport-type-tab';
 export * from './fixtures-list';
 export * from './fixtures-content';
+export * from './fixtures-search';

@@ -63,8 +63,8 @@ export default function FixturesLayout({ children }: { children: React.ReactNode
       </div>
 
       <div className="border-l border-border flex-1 p-1">
-        <div className="flex flex-col min-h-screen bg-app-background rounded-2xl">
-          <div className="flex-1 ">
+        <div className="flex flex-col bg-app-background rounded-2xl h-full">
+          <div >
             <ChatBanner />
             {/* <Chat /> */}
           </div>
